@@ -1,0 +1,23 @@
+
+imputers:
+    MeanMedianImputer:
+
+encoders:
+    CountFrequencyEncoder:
+        encoding_method: count
+
+    OrdinalEncoder:
+        encoding_method: [arbitrary, ordered]
+        
+    DecisionTreeEncoder:
+        cv: 4
+        scoring: [mse, rmse, r2]
+        variables: '[RAD, ZN]'
+  
+discretisation:
+    EqualFrequencyDiscretiser:
+        q: 10
+
+models: 
+    AdaBoostRegressor:
+    BayesianRidge:
