@@ -1,3 +1,5 @@
+import string
+import random
 import os
 import datetime
 import numpy as np
@@ -86,10 +88,9 @@ class AMLPipeline(Pipeline):
 
         return pipes
 
-    def _save_report(self, report):
+    def _save_report(self, report, report_name):
         if not os.path.exists('reports'):
             os.mkdir('reports')
-        report_name = f'{report=}'.split('=')[0]
         report.to_csv(
             'reports/' + self.timenow + '_' + report_name + '.csv', index=False)
 
@@ -114,6 +115,7 @@ class AMLPipeline(Pipeline):
 
         scores = np.array([])
         pipes = []
+        pipe_names = []
         preds = []
         values_report = []  # ! TODO
 
@@ -134,6 +136,9 @@ class AMLPipeline(Pipeline):
                 _scores_val = round(self.metric(y_val, y_pred_val), 2)
                 scores = np.append(scores, _scores_val)
             pipes.append(p)
+            letters = string.ascii_lowercase
+            pipe_name = ''.join(random.choice(letters) for i in range(10))
+            pipe_names.append(pipe_name)
 
         # build performance report based on scores, pipes and fit time
         scores = scores.reshape(len(self.pipe_lst), -1)
@@ -144,17 +149,22 @@ class AMLPipeline(Pipeline):
             scores['train_score'] / scores['test_score'], 2)
         scores['train_val_dif'] = round(
             scores['train_score'] / scores['val_score'], 2)
-        pipes = pd.Series(pipes, name='pipelines')
+        pipes = pd.Series(pipes, name='pipeline')
+        pipe_names = pd.Series(pipe_names, name='pipe_name')
         fit_time = pd.Series(self.fit_time_list, name='fit_time(H:M)')
-        performance_report = pd.concat([scores, pipes, fit_time], axis=1)
+        performance_report = pd.concat(
+            [pipe_names, pipes, fit_time, scores], axis=1)
 
         # save if needed
         if self.save_performance is True:
-            self._save_report(performance_report)
+            self._save_report(performance_report, 'performance_report')
         if self.save_values is True:
-            self._save_report(values_report)
+            self._save_report(values_report, 'values_report')
 
         return performance_report
+
+    def from_file():
+        pass
 
 
 Pipeline._validate_steps = _alt_validate_steps
