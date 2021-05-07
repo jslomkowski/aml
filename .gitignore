@@ -130,4 +130,5 @@ dmypy.json
 
 one.py
 reports/*
+pipes/*
 fvdf

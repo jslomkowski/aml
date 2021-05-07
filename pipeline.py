@@ -1,3 +1,4 @@
+from joblib import dump
 import string
 import random
 import os
@@ -25,11 +26,12 @@ def _alt_validate_steps(self):
 
 class AMLPipeline(Pipeline):
     def __init__(self, pipeline, metric, save_performance=False,
-                 save_values=False):
+                 save_values=False, save_pipelines=False):
         self.pipeline = Pipeline(pipeline)
         self.metric = metric
         self.save_performance = save_performance
         self.save_values = save_values
+        self.save_pipelines = save_pipelines
         self.timenow = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
 
     def _make(self):
@@ -139,6 +141,10 @@ class AMLPipeline(Pipeline):
             letters = string.ascii_lowercase
             pipe_name = ''.join(random.choice(letters) for i in range(10))
             pipe_names.append(pipe_name)
+            if self.save_pipelines:
+                if not os.path.exists('pipes'):
+                    os.mkdir('pipes')
+                dump(p, f'pipes/{pipe_name}.joblib')
 
         # build performance report based on scores, pipes and fit time
         scores = scores.reshape(len(self.pipe_lst), -1)
@@ -162,9 +168,6 @@ class AMLPipeline(Pipeline):
             self._save_report(values_report, 'values_report')
 
         return performance_report
-
-    def from_file():
-        pass
 
 
 Pipeline._validate_steps = _alt_validate_steps
