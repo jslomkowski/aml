@@ -1,3 +1,6 @@
+import os
+import datetime
+import numpy as np
 from itertools import product
 import pandas as pd
 from copy import deepcopy
@@ -19,8 +22,13 @@ def _alt_validate_steps(self):
 
 
 class AMLPipeline(Pipeline):
-    def __init__(self, pipeline):
+    def __init__(self, pipeline, metric, save_performance=False,
+                 save_values=False):
         self.pipeline = Pipeline(pipeline)
+        self.metric = metric
+        self.save_performance = save_performance
+        self.save_values = save_values
+        self.timenow = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
 
     def _make(self):
         cfg = []
@@ -78,17 +86,75 @@ class AMLPipeline(Pipeline):
 
         return pipes
 
+    def _save_report(self, report):
+        if not os.path.exists('reports'):
+            os.mkdir('reports')
+        report_name = f'{report=}'.split('=')[0]
+        report.to_csv(
+            'reports/' + self.timenow + '_' + report_name + '.csv', index=False)
+
     def fit(self, X, y):
-        self.lst = []
+        self.pipe_lst = []
+        self.fit_time_list = []
         pipes = self._make()
         for p in pipes:
+            then = datetime.datetime.now()
             p.fit(X, y)
-            self.lst.append(p)
+            now = datetime.datetime.now()
+            time_delta = now - then
+            minutes, seconds = time_delta.seconds // 60 % 60, time_delta.seconds
+            fit_time = str(minutes) + ':' + str(seconds)
+            self.pipe_lst.append(p)
+            self.fit_time_list.append(fit_time)
         return self
 
-    def validate(self, X):
-        for p in self.lst:
-            print(p.predict(X))
+    def validate(self, X_train, y_train,
+                 X_test=None, y_test=None,
+                 X_val=None, y_val=None):
+
+        scores = np.array([])
+        pipes = []
+        preds = []
+        values_report = []  # ! TODO
+
+        # train pipelines on data provided
+        for p in self.pipe_lst:
+            y_pred_train = p.predict(X_train)
+            preds.append(y_pred_train)
+            _scores_train = round(self.metric(y_train, y_pred_train), 2)
+            scores = np.append(scores, _scores_train)
+            if X_test is not None:
+                y_pred_test = p.predict(X_test)
+                preds.append(y_pred_test)
+                _scores_test = round(self.metric(y_test, y_pred_test), 2)
+                scores = np.append(scores, _scores_test)
+            if X_val is not None:
+                y_pred_val = p.predict(X_val)
+                preds.append(y_pred_val)
+                _scores_val = round(self.metric(y_val, y_pred_val), 2)
+                scores = np.append(scores, _scores_val)
+            pipes.append(p)
+
+        # build performance report based on scores, pipes and fit time
+        scores = scores.reshape(len(self.pipe_lst), -1)
+        scores_names = ['train_score', 'test_score',
+                        'val_score'][:scores.shape[1]]
+        scores = pd.DataFrame(scores, columns=scores_names)
+        scores['train_test_dif'] = round(
+            scores['train_score'] / scores['test_score'], 2)
+        scores['train_val_dif'] = round(
+            scores['train_score'] / scores['val_score'], 2)
+        pipes = pd.Series(pipes, name='pipelines')
+        fit_time = pd.Series(self.fit_time_list, name='fit_time(H:M)')
+        performance_report = pd.concat([scores, pipes, fit_time], axis=1)
+
+        # save if needed
+        if self.save_performance is True:
+            self._save_report(performance_report)
+        if self.save_values is True:
+            self._save_report(values_report)
+
+        return performance_report
 
 
 Pipeline._validate_steps = _alt_validate_steps
