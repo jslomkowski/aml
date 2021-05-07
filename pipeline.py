@@ -24,6 +24,9 @@ def _alt_validate_steps(self):
             continue
 
 
+Pipeline._validate_steps = _alt_validate_steps
+
+
 class AMLPipeline(Pipeline):
     def __init__(self, pipeline, metric, save_performance=False,
                  save_values=False, save_pipelines=False):
@@ -99,6 +102,7 @@ class AMLPipeline(Pipeline):
     def fit(self, X, y):
         self.pipe_lst = []
         self.fit_time_list = []
+
         pipes = self._make()
         for p in pipes:
             then = datetime.datetime.now()
@@ -111,10 +115,8 @@ class AMLPipeline(Pipeline):
             self.fit_time_list.append(fit_time)
         return self
 
-    def validate(self, X_train, y_train,
-                 X_test=None, y_test=None,
-                 X_val=None, y_val=None):
-
+    def validate(self, X_train, y_train, X_test=None, y_test=None, X_val=None,
+                 y_val=None):
         scores = np.array([])
         pipes = []
         pipe_names = []
@@ -151,10 +153,12 @@ class AMLPipeline(Pipeline):
         scores_names = ['train_score', 'test_score',
                         'val_score'][:scores.shape[1]]
         scores = pd.DataFrame(scores, columns=scores_names)
-        scores['train_test_dif'] = round(
-            scores['train_score'] / scores['test_score'], 2)
-        scores['train_val_dif'] = round(
-            scores['train_score'] / scores['val_score'], 2)
+        if 'test_score' in scores.columns:
+            scores['train_test_dif'] = round(
+                scores['train_score'] / scores['test_score'], 2)
+        if 'val_score' in scores.columns:
+            scores['train_val_dif'] = round(
+                scores['train_score'] / scores['val_score'], 2)
         pipes = pd.Series(pipes, name='pipeline')
         pipe_names = pd.Series(pipe_names, name='pipe_name')
         fit_time = pd.Series(self.fit_time_list, name='fit_time(H:M)')
@@ -168,6 +172,3 @@ class AMLPipeline(Pipeline):
             self._save_report(values_report, 'values_report')
 
         return performance_report
-
-
-Pipeline._validate_steps = _alt_validate_steps
