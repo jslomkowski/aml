@@ -18,13 +18,9 @@ def _alt_validate_steps(self):
             continue
 
 
-class Aml(Pipeline):
-    pass
-
-
-class AMLPipeline(Aml):
+class AMLPipeline(Pipeline):
     def __init__(self, pipeline):
-        self.pipeline = Aml(pipeline)
+        self.pipeline = Pipeline(pipeline)
 
     def _make(self):
         cfg = []
@@ -83,16 +79,16 @@ class AMLPipeline(Aml):
         return pipes
 
     def fit(self, X, y):
-        lst = []
+        self.lst = []
         pipes = self._make()
         for p in pipes:
             p.fit(X, y)
-            lst.append(p)
-        return lst
+            self.lst.append(p)
+        return self
 
-    def predict(self, X, lst):
-        for p in lst:
+    def validate(self, X):
+        for p in self.lst:
             print(p.predict(X))
 
 
-Aml._validate_steps = _alt_validate_steps
+Pipeline._validate_steps = _alt_validate_steps

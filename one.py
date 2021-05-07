@@ -20,5 +20,6 @@ pipe = AMLPipeline([
     ('mod2', RandomForestRegressor())
 ])
 
-lst = pipe.fit(X_train, y_train)
-pipe.predict(X_test, lst)
+pipe.fit(X_train, y_train)
+
+pipe.validate(X_test)
