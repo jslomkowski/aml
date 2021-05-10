@@ -132,3 +132,5 @@ one.py
 reports/*
 pipes/*
 fvdf
+.vscode/settings.json
+.vscode/launch.json

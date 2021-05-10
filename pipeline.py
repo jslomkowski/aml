@@ -38,15 +38,25 @@ class AMLPipeline(Pipeline):
         self.timenow = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
 
     def _make(self):
+
+        steps_lst = []
+        for p in self.pipeline.steps:
+            if type(p) == tuple:
+                steps_lst.append(p)
+            elif type(p) == list:
+                for pi in p:
+                    steps_lst.append(pi)
+        self.pipeline = Pipeline(steps_lst)
+
         cfg = []
         for k, v in self.pipeline.get_params().items():
             if k.find('__') > 0:
-                if type(self.pipeline.get_params()[k]) == tuple:
+                if type(self.pipeline.get_params()[k]) == tuple or \
+                        type(self.pipeline.get_params()[k]) == range:
                     for i in range(len(v)):
                         cfg.append([k, v[i]])
                 else:
                     cfg.append([k, v])
-
         cfg = pd.DataFrame(cfg, columns=['config', 'value'])
         cfg[['block', 'config']] = cfg['config'].str.split(
             '__', 1, expand=True)
