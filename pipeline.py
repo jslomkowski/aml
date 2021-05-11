@@ -1,41 +1,36 @@
-from joblib import dump
-import string
-import random
-import os
 import datetime
-import numpy as np
-from itertools import product
-import pandas as pd
+import os
+import random
+import string
 from copy import deepcopy
+from itertools import product
+
+import numpy as np
+import pandas as pd
+from joblib import dump
 from sklearn.pipeline import Pipeline
+from tensorflow.keras.layers import Dense, Dropout, Input
+
+from monkey import Dense__init__, _validate_steps
+
+# from tensorflow.keras.layers import Dense, Dropout, Input
 
 
-def _alt_validate_steps(self):
-    names, estimators = zip(*self.steps)
-
-    # validate names
-    self._validate_names(names)
-
-    # validate estimators
-    transformers = estimators[:-1]
-
-    for t in transformers:
-        if t is None or t == 'passthrough':
-            continue
-
-
-Pipeline._validate_steps = _alt_validate_steps
+Pipeline._validate_steps = _validate_steps
+# Dense.__init__ = Dense__init__
 
 
 class AMLPipeline(Pipeline):
     def __init__(self, pipeline, metric, save_performance=False,
                  save_values=False, save_pipelines=False):
+
         self.pipeline = Pipeline(pipeline)
         self.metric = metric
         self.save_performance = save_performance
         self.save_values = save_values
         self.save_pipelines = save_pipelines
         self.timenow = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+        print(self.pipeline)
 
     def _make(self):
 
@@ -57,6 +52,7 @@ class AMLPipeline(Pipeline):
                         cfg.append([k, v[i]])
                 else:
                     cfg.append([k, v])
+
         cfg = pd.DataFrame(cfg, columns=['config', 'value'])
         cfg[['block', 'config']] = cfg['config'].str.split(
             '__', 1, expand=True)
@@ -100,7 +96,6 @@ class AMLPipeline(Pipeline):
             pipe_copy.steps = [i for j, i in enumerate(
                 pipe_copy.steps) if j not in delete_indexes]
             pipes.append(pipe_copy)
-
         return pipes
 
     def _save_report(self, report, report_name):
