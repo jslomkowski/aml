@@ -30,7 +30,6 @@ class AMLPipeline(Pipeline):
         self.save_values = save_values
         self.save_pipelines = save_pipelines
         self.timenow = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-        print(self.pipeline)
 
     def _make(self):
 
