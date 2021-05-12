@@ -4,7 +4,12 @@
 
 experimental package for machine learning automated pipelines that iterates through transformers and estimators to return performance report with errors
 
-demo:
+## install
+```
+conda install -c conda-forge feature_engine
+```
+
+## demo:
 
 ```
 from pipeline import AMLPipeline
@@ -25,8 +30,8 @@ pipe = AMLPipeline([
     ('disc1', EqualFrequencyDiscretiser()),
     ('disc2', EqualWidthDiscretiser()),
     ('model1', LinearRegression()),
-    ('model2', RandomForestRegressor()),
-],
+    ('model2', RandomForestRegressor(n_estimators = (50,100), criterion = ('mse', 'mae')))
+    ],
     mean_absolute_error, save_performance=True)
 
 pipe.fit(X_train, y_train)
