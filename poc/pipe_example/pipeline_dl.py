@@ -52,10 +52,10 @@ class NoTransformer(BaseEstimator, TransformerMixin):
     def __init__(self):
         pass
 
-    def fit(self, input, y=None):
+    def fit(self):
         return self
 
-    def transform(self, input, y=None):
+    def transform(self, input):
         return input * 1
 
 
@@ -116,9 +116,11 @@ def _product_dict(**kwargs):
 configs = list(_product_dict(**config))
 
 # build custom config for specific pipeline
-ready_pipes = []
+
+pipelines = [pipelines[0]]
 for p in pipelines:
-    p = pipelines[-1]
+    # print(p)
+    # p = pipelines[0]
     c = pd.DataFrame(configs).T.reset_index()
     c[['block', 'config']] = c['index'].str.split('__', expand=True)
     keys = list(p.columns.values)[0]
@@ -128,45 +130,60 @@ for p in pipelines:
     c.index = c['index']
     c = c.drop(['index', 'block', 'config'], axis=1).T
     c = c.to_dict('records')
-
     # convert single config to dataframe ready to be merged with pipeline
+    # c = [c[4]]
+
+    cfg = []
     for c1 in c:
-        # c1 = c[1]
-        cfg = pd.DataFrame(c1, index=[0]).T.reset_index()
-        cfg[['block', 'config']] = cfg['index'].str.split('__', 1, expand=True)
-        cfg['value'] = cfg.apply(lambda row: {row['config']: row[0]}, axis=1)
-        cfg = cfg[['block', 'value']]
-        cfg = cfg.groupby('block')['value'].apply(list)
-        # layers in neural network neet to be in one dictionary
-        for y in range(len(cfg)):
-            x = cfg[y]
+        c1 = pd.DataFrame(c1, index=[0]).T.reset_index()
+        c1[['block', 'config']] = c1['index'].str.split('__', 1, expand=True)
+        c1['value'] = c1.apply(lambda row: {row['config']: row[0]}, axis=1)
+        c1 = c1[['block', 'value']]
+        c1 = c1.groupby('block')['value'].apply(list)
+        # layers in neural network need to be in one dictionary
+        for y in range(len(c1)):
+            x = c1[y]
             res = {}
             for d in x:
                 res.update(d)
-            cfg[y] = res
-        cfg = cfg.reset_index()
+            c1[y] = res
+        c1 = c1.reset_index()
+        cfg.append(c1)
 
-        # merge pipeline with config tailored for that pipeline
-        ready_pipe = pd.merge(p, cfg, how='left', on='block')
+    # merge pipeline with config tailored for that pipeline
+    ready_pipes = []
+    for c in cfg:
+        ready_pipe = pd.merge(p, c, how='left', on='block')
+        ready_pipes.append(ready_pipe)
 
-        # iterate through pipeline dataframe and change config to new one
-        for i in range(len(ready_pipe)):
-            # i = 1
-            if type(ready_pipe.loc[i, :]['value']) == dict:
-                if "sklearn" in str(type(ready_pipe.iloc[i]['class'])):
-                    ready_pipe.iloc[i]['class'].set_params(
-                        **ready_pipe.iloc[i]['value'])
-                elif "tensorflow" in str(type(ready_pipe.iloc[i]['class'])):
-                    org_cfg = ready_pipe['class'][i].get_config()
-                    replace = ready_pipe['value'][i]
-                    new_cfg = {key: replace.get(
-                        key, org_cfg[key]) for key in org_cfg}
-                    ready_pipe['class'][i] = ready_pipe['class'][i].from_config(
-                        new_cfg)
-        print(ready_pipe[['block', 'class']])
-        ready_pipes.append(ready_pipe[['block', 'class']])
+###################################################################
 
-ready_pipes[0]['class'][0].get_params()
-ready_pipes[2]['class'][1].get_config()
-ready_pipe['class'][1].get_config()
-ready_pipe['class'][2]
+ready_pipes[-1]
+
+# ###################################################################
+# final_pipes = []
+# # iterate through pipeline dataframe and change config to new one
+# for ready_pipe in ready_pipes:
+#     # ready_pipe = ready_pipes[-1]
+#     for i in range(len(ready_pipe)):
+#         # print(i)
+#         # i = 0
+#         if type(ready_pipe['value'][i]) == dict:
+#             if "sklearn" in str(type(ready_pipe['class'][i])):
+#                 ready_pipe['class'][i].set_params(
+#                     **ready_pipe['value'][i])
+#                 print(ready_pipe[['block', 'class']])
+#                 # elif "tensorflow" in str(type(ready_pipe.iloc[i]['class'])):
+#                 #     # print('tensorflow')
+#                 #     org_cfg = ready_pipe['class'][i].get_config()
+#                 #     replace = ready_pipe['value'][i]
+#                 #     new_cfg = {key: replace.get(
+#                 #         key, org_cfg[key]) for key in org_cfg}
+#                 #     ready_pipe['class'][i] = ready_pipe['class'][i].from_config(
+#                 #         new_cfg)
+#                 final_pipes.append(ready_pipe[['block', 'class']])
+# # print(final_pipes)
+# # final_pipes[-1]['class'][0].get_params()
+# # final_pipes[-1]['class'][1].get_config()
+# # ready_pipe['class'][1].get_config()
+# # ready_pipe['class'][2]
