@@ -6,6 +6,9 @@
 
 # import math
 # import collections
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 import datetime
 import itertools
 # import os
@@ -61,18 +64,22 @@ class NoTransformer(BaseEstimator, TransformerMixin):
 
 config = {
     'scal1__with_mean': [True, False],
-    'layer_a1__units': [10, 15],
-    'layer_a1__activation': ['relu', 'sigmoid'],
+    'model__units': [10, 15],
+    'model__activations': ['relu', 'sigmoid'],
 }
+
+
+def create_model(units, activations):
+    model = Sequential()
+    model.add(Dense(99, activations))
+    model.add(Dense(units))
+    model.compile(loss='mse', optimizer='adam')
+    return model
 
 
 pipeline = Pipeline([
     ('scal1', StandardScaler()),
-    ('layer_a1', Dense(50)),
-    ('layer_a2', NoTransformer()),
-    ('layer_b1', Dense(50)),
-    ('layer_b2', NoTransformer()),
-    ('layer_c1', Dense(1))
+    ('model', KerasRegressor(create_model)),
 ])
 
 steps_lst = pd.DataFrame(pipeline.get_params()[
@@ -99,12 +106,6 @@ for i in range(len(dfs)):
 pipelines[0]
 #########################################################################
 
-config = {
-    'scal1__with_mean': [True, False],
-    'layer_a1__units': [10, 15],
-    'layer_a1__activation': ['relu', 'sigmoid']
-}
-
 
 def _product_dict(**kwargs):
     keys = kwargs.keys()
@@ -120,7 +121,7 @@ configs = list(_product_dict(**config))
 pipelines = [pipelines[0]]
 for p in pipelines:
     # print(p)
-    # p = pipelines[0]
+    p = pipelines[0]
     c = pd.DataFrame(configs).T.reset_index()
     c[['block', 'config']] = c['index'].str.split('__', expand=True)
     keys = list(p.columns.values)[0]
