@@ -42,7 +42,7 @@ pipe.validate(X_train, y_train, X_test, y_test)
 after execution, a report will be created with all configurations of transformers and estimators that took part in the training process
 
 ## project requirements:
-support for class parameters
-support for multiple transformers
-support for multiple models
-support for keras neural networks
+support for class parameters  
+support for multiple transformers  
+support for multiple models  
+support for keras neural networks  
