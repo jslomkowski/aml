@@ -5,8 +5,9 @@
 experimental package for machine learning automated pipelines that iterates through transformers and estimators to return performance report with errors
 
 ## install
+
 ```
-conda install -c conda-forge feature_engine
+pip install -r requirements.txt
 ```
 
 ## demo:
