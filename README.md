@@ -46,3 +46,4 @@ support for class parameters
 support for multiple transformers  
 support for multiple models  
 support for keras neural networks  
+support for multiprocessing
