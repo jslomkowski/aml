@@ -1,4 +1,6 @@
+from multiprocessing import Pool
 import itertools
+from copy import deepcopy
 
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -9,7 +11,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import ParameterGrid, train_test_split
 from sklearn.pipeline import Pipeline
-from copy import deepcopy
 
 
 def _validate_steps(self):
@@ -25,6 +26,11 @@ Pipeline._validate_steps = _validate_steps
 
 X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
+y = pd.Series(y)
+
+for i in range(2):
+    X = X.append(X)
+    y = y.append(y)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
@@ -36,52 +42,69 @@ pipeline = Pipeline([
     ('model2', RandomForestRegressor())
 ])
 
-param_grid = {
+grid = {
     'disc1__q': [5, 15],
     'model2__n_estimators': [50, 150]
 }
 
 
-fd = {}
-st = dict(pipeline.steps)
-ts = {v: k for k, v in st.items()}
-for k, v in st.items():
-    # print(k, v)
-    k = ''.join([i for i in k if not i.isdigit()])
-    if k not in fd.keys():
-        fd[k] = [v]
-    else:
-        fd[k].append(v)
+def make_aml_combinations(pipeline, grid):
+    fd = {}
+    st = dict(pipeline.steps)
+    ts = {v: k for k, v in st.items()}
+    for k, v in st.items():
+        # print(k, v)
+        k = ''.join([i for i in k if not i.isdigit()])
+        if k not in fd.keys():
+            fd[k] = [v]
+        else:
+            fd[k].append(v)
+
+    def _product_dict(**kwargs):
+        for instance in itertools.product(*kwargs.values()):
+            yield dict(zip(kwargs.keys(), instance))
+
+    pipelines_dict = list(_product_dict(**fd))
+
+    for p in pipelines_dict:
+        for k, v in p.items():
+            p[ts[v]] = p.pop(k)
+
+    final_pipes = []
+    for pipe_dict in pipelines_dict:
+
+        pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
+
+        clone_grid = deepcopy(grid)
+
+        delete_indexes = []
+        for g in clone_grid:
+            if g.split('__')[0] not in pipe_dict:
+                delete_indexes.append(g)
+
+        for k in delete_indexes:
+            clone_grid.pop(k, None)
+
+        clone_grid_list = list(ParameterGrid(clone_grid))
+        for c in clone_grid_list:
+            clone_pipe = deepcopy(pipe)
+            clone_pipe.set_params(**c)
+            final_pipes.append(clone_pipe)
+    return final_pipes
 
 
-def _product_dict(**kwargs):
-    for instance in itertools.product(*kwargs.values()):
-        yield dict(zip(kwargs.keys(), instance))
+final_pipes = make_aml_combinations(pipeline, grid)
 
 
-pipelines_dict = list(_product_dict(**fd))
+def fit_pipes(f):
+    #! Fix this
+    # for f in final_pipes:
+    # print(f)
+    f.fit(X_train, y_train)
+    dir(f)
 
-for p in pipelines_dict:
-    for k, v in p.items():
-        p[ts[v]] = p.pop(k)
 
-final_pipes = []
-for pipe_dict in pipelines_dict:
-
-    pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
-
-    clone_param_grid = deepcopy(param_grid)
-
-    delete_indexes = []
-    for g in clone_param_grid:
-        if g.split('__')[0] not in pipe_dict:
-            delete_indexes.append(g)
-
-    for k in delete_indexes:
-        clone_param_grid.pop(k, None)
-
-    clone_param_grid_list = list(ParameterGrid(clone_param_grid))
-    for c in clone_param_grid_list:
-        clone_pipe = deepcopy(pipe)
-        clone_pipe.set_params(**c)
-        final_pipes.append(clone_pipe)
+if __name__ == '__main__':
+    pool = Pool()
+    res = pool.map(fit_pipes, final_pipes)
+    print('done')
