@@ -1,3 +1,6 @@
+import random
+import string
+from sklearn.metrics import mean_absolute_error
 from multiprocessing import Pool
 import itertools
 from copy import deepcopy
@@ -28,7 +31,7 @@ X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
 y = pd.Series(y)
 
-for i in range(2):
+for i in range(10):
     X = X.append(X)
     y = y.append(y)
 
@@ -93,18 +96,29 @@ def make_aml_combinations(pipeline, grid):
     return final_pipes
 
 
-final_pipes = make_aml_combinations(pipeline, grid)
-
-
-def fit_pipes(f):
-    #! Fix this
-    # for f in final_pipes:
-    # print(f)
+def fit(f):
+    results = []
+    for f in final_pipes:
+        print(f)
     f.fit(X_train, y_train)
-    dir(f)
+    y_pred_train = f.predict(X_train)
+    y_pred_test = f.predict(X_test)
+    letters = string.ascii_lowercase
+    pipe_name = ''.join(random.choice(letters) for i in range(10))
+
+    error_train = mean_absolute_error(y_train, y_pred_train)
+    error_test = mean_absolute_error(y_test, y_pred_test)
+
+    res = {'name': pipe_name,
+           'error_train': round(error_train, 2),
+           'error_test': round(error_test, 2)}
+    results.append(res)
+    return results
 
 
 if __name__ == '__main__':
+    final_pipes = make_aml_combinations(pipeline, grid)
     pool = Pool()
-    res = pool.map(fit_pipes, final_pipes)
+    results = pool.map(fit, final_pipes)
+    df_results = pd.DataFrame.from_dict(results)
     print('done')
