@@ -105,14 +105,17 @@ def fit(final_pipes, metric):
         y_pred_test = f.predict(X_test)
         letters = string.ascii_lowercase
         pipe_name = ''.join(random.choice(letters) for i in range(10))
-        error_train = metric(y_train, y_pred_train)
-        error_test = metric(y_test, y_pred_test)
+        error_train = mean_absolute_error(y_train, y_pred_train)
+        error_test = mean_absolute_error(y_test, y_pred_test)
         res = {'name': pipe_name,
                'params': f,
                'error_train': round(error_train, 2),
-               'error_test': round(error_test, 2)}
+               'error_test': round(error_test, 2),
+               'train_test_dif': round(error_test / error_train, 2),
+               }
         results.append(res)
     results = pd.DataFrame.from_dict(results)
+
     return results
 
 
