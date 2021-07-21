@@ -31,7 +31,7 @@ X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
 y = pd.Series(y)
 
-for i in range(1):
+for i in range(10):
     X = X.append(X)
     y = y.append(y)
 
