@@ -1,54 +1,53 @@
+from sklearn.model_selection import GridSearchCV
+import itertools
 import random
 import string
-from sklearn.metrics import mean_absolute_error
-from multiprocessing import Pool
-import itertools
 from copy import deepcopy
 
 import pandas as pd
-from feature_engine.discretisation import (EqualFrequencyDiscretiser,
-                                           EqualWidthDiscretiser)
-from feature_engine.imputation import MeanMedianImputer
+from keras.layers import Dense, Dropout
+from keras.models import Sequential
+from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.datasets import load_boston
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid, train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
-
-def _validate_steps(self):
-    names, estimators = zip(*self.steps)
-    self._validate_names(names)
-    transformers = estimators[:-1]
-    for t in transformers:
-        if t is None or t == 'passthrough':
-            continue
-
-
-Pipeline._validate_steps = _validate_steps
 
 X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
 y = pd.Series(y)
 
-for i in range(1):
-    X = X.append(X)
-    y = y.append(y)
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-pipeline = Pipeline([
-    ('imp1', MeanMedianImputer()),
-    ('disc1', EqualFrequencyDiscretiser()),
-    ('disc2', EqualWidthDiscretiser()),
-    ('model1', LinearRegression()),
-    ('model2', RandomForestRegressor())
-])
 
-grid = {
-    'disc1__q': [5, 15],
-    'model2__n_estimators': [50, 150]
+def create_model(optimizer='adagrad', dropout=0.2):
+    model = Sequential()
+    model.add(Dense(64, activation='relu'))
+    model.add(Dropout(dropout))
+    model.add(Dense(1, activation='relu'))
+
+    model.compile(loss='mean_absolute_error',
+                  optimizer='adam')
+
+    return model
+
+
+model = KerasRegressor(build_fn=create_model, verbose=1)
+
+
+param_grid = {
+    # 'model1__optimizer': ['rmsprop', 'adam', 'adagrad'],
+    'model1__epochs': [4, 8],
+    'model1__dropout': [0.1, 0.2],
 }
+
+
+pipeline = Pipeline([
+    ('ss1', StandardScaler()),
+    ('model1', model)
+])
 
 
 def make_aml_combinations(pipeline, grid):
