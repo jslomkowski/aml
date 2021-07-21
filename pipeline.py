@@ -1,177 +1,101 @@
-import datetime
-import os
+import numpy as np
 import random
 import string
+from sklearn.metrics import mean_absolute_error, r2_score
+import itertools
 from copy import deepcopy
-from itertools import product
 
-import numpy as np
 import pandas as pd
-from joblib import dump
+from sklearn.model_selection import ParameterGrid, GridSearchCV
 from sklearn.pipeline import Pipeline
 
-from monkey import _validate_steps
 
-# from tensorflow.keras.layers import Dense, Dropout, Input
+def _validate_steps(self):
+    names, estimators = zip(*self.steps)
+    self._validate_names(names)
+    transformers = estimators[:-1]
+    for t in transformers:
+        if t is None or t == 'passthrough':
+            continue
 
 
 Pipeline._validate_steps = _validate_steps
-# Dense.__init__ = Dense__init__
 
 
-class AMLPipeline(Pipeline):
-    def __init__(self, pipeline, metric, save_performance=False,
-                 save_values=False, save_pipelines=False):
+class AMLGridSearchCV:
 
-        self.pipeline = Pipeline(pipeline)
-        self.metric = metric
-        self.save_performance = save_performance
-        self.save_values = save_values
-        self.save_pipelines = save_pipelines
-        self.timenow = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+    def __init__(self, pipeline, param_grid, scoring=None):
+        self.pipeline = pipeline
+        self.param_grid = param_grid
+        if scoring is None:
+            self.scoring = mean_absolute_error
 
-    def _make(self):
+    def _make_aml_combinations(self, pipeline, grid):
+        fd = {}
+        st = dict(pipeline.steps)
+        ts = {v: k for k, v in st.items()}
+        for k, v in st.items():
+            # print(k, v)
+            k = ''.join([i for i in k if not i.isdigit()])
+            if k not in fd.keys():
+                fd[k] = [v]
+            else:
+                fd[k].append(v)
 
-        steps_lst = []
-        for p in self.pipeline.steps:
-            if type(p) == tuple:
-                steps_lst.append(p)
-            elif type(p) == list:
-                for pi in p:
-                    steps_lst.append(pi)
-        self.pipeline = Pipeline(steps_lst)
+        def _product_dict(**kwargs):
+            for instance in itertools.product(*kwargs.values()):
+                yield dict(zip(kwargs.keys(), instance))
 
-        cfg = []
-        for k, v in self.pipeline.get_params().items():
-            if k.find('__') > 0:
-                if type(self.pipeline.get_params()[k]) == tuple or \
-                        type(self.pipeline.get_params()[k]) == range:
-                    for i in range(len(v)):
-                        cfg.append([k, v[i]])
-                else:
-                    cfg.append([k, v])
+        pipelines_dict = list(_product_dict(**fd))
 
-        cfg = pd.DataFrame(cfg, columns=['config', 'value'])
-        cfg[['block', 'config']] = cfg['config'].str.split(
-            '__', 1, expand=True)
-        cfg['block2'] = cfg['block'].str.replace('\d+', '', regex=True)
+        for p in pipelines_dict:
+            for k, v in p.items():
+                p[ts[v]] = p.pop(k)
 
-        cfg2 = cfg[['block', 'block2']].drop_duplicates()
+        final_pipes = []
+        for pipe_dict in pipelines_dict:
 
-        prods = []
-        for _, d in cfg2.groupby("block2"):
-            prods.append([s for _, s in d.iterrows()])
-        dfs = [pd.concat(ss, axis=1).T for ss in product(*prods)]
+            pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
 
-        configs = []
-        for i in range(len(dfs)):
-            t = pd.merge(dfs[i], cfg, how='left', on='block')[
-                ['block', 'config', 'value']]
-            configs.append(t)
-
-        dfs_list = []
-        for c in configs:
-            prods = []
-            for _, d in c.groupby("config"):
-                prods.append([s for _, s in d.iterrows()])
-            dfs = [pd.concat(ss, axis=1).T for ss in product(*prods)]
-            dfs_list = dfs_list + dfs
-
-        pipes = []
-
-        for d in dfs_list:
-            d['config'] = d['block'] + '__' + d['config']
-            pipe_copy = deepcopy(self.pipeline)
-            params = d[['config', 'value']].set_index(
-                'config').T.to_dict('records')[0]
-            pipe_copy.set_params(**params)
+            clone_grid = deepcopy(grid)
 
             delete_indexes = []
-            for s in range(len(pipe_copy.steps)):
-                if pipe_copy.steps[s][0] not in d['block'].unique():
-                    delete_indexes.append(s)
+            for g in clone_grid:
+                if g.split('__')[0] not in pipe_dict:
+                    delete_indexes.append(g)
 
-            pipe_copy.steps = [i for j, i in enumerate(
-                pipe_copy.steps) if j not in delete_indexes]
-            pipes.append(pipe_copy)
-        return pipes
+            for k in delete_indexes:
+                clone_grid.pop(k, None)
 
-    def _save_report(self, report, report_name):
-        if not os.path.exists('reports'):
-            os.mkdir('reports')
-        report.to_csv(
-            'reports/' + self.timenow + '_' + report_name + '.csv', index=False)
+            clone_grid_list = list(ParameterGrid(clone_grid))
+            for c in clone_grid_list:
+                clone_pipe = deepcopy(pipe)
+                clone_pipe.set_params(**c)
+                final_pipes.append(clone_pipe)
+        return final_pipes
 
-    def fit(self, X, y):
-        self.pipe_lst = []
-        self.fit_time_list = []
-
-        pipes = self._make()
-        for p in pipes:
-            then = datetime.datetime.now()
-            p.fit(X, y)
-            now = datetime.datetime.now()
-            time_delta = now - then
-            minutes, seconds = time_delta.seconds // 60 % 60, time_delta.seconds
-            fit_time = str(minutes) + ':' + str(seconds)
-            self.pipe_lst.append(p)
-            self.fit_time_list.append(fit_time)
-        return self
-
-    def validate(self, X_train, y_train, X_test=None, y_test=None, X_val=None,
-                 y_val=None):
-        scores = np.array([])
-        pipes = []
-        pipe_names = []
-        preds = []
-        values_report = []  # ! TODO
-
-        # train pipelines on data provided
-        for p in self.pipe_lst:
-            y_pred_train = p.predict(X_train)
-            preds.append(y_pred_train)
-            _scores_train = round(self.metric(y_train, y_pred_train), 2)
-            scores = np.append(scores, _scores_train)
+    def fit(self, X_train, y_train, X_test=None, y_test=None):
+        results = []
+        final_pipes = self._make_aml_combinations(
+            self.pipeline, self.param_grid)
+        for f in final_pipes:
+            f.fit(X_train, y_train)
+            y_pred_train = f.predict(X_train)
             if X_test is not None:
-                y_pred_test = p.predict(X_test)
-                preds.append(y_pred_test)
-                _scores_test = round(self.metric(y_test, y_pred_test), 2)
-                scores = np.append(scores, _scores_test)
-            if X_val is not None:
-                y_pred_val = p.predict(X_val)
-                preds.append(y_pred_val)
-                _scores_val = round(self.metric(y_val, y_pred_val), 2)
-                scores = np.append(scores, _scores_val)
-            pipes.append(p)
+                y_pred_test = f.predict(X_test)
             letters = string.ascii_lowercase
             pipe_name = ''.join(random.choice(letters) for i in range(10))
-            pipe_names.append(pipe_name)
-            if self.save_pipelines:
-                if not os.path.exists('pipes'):
-                    os.mkdir('pipes')
-                dump(p, f'pipes/{pipe_name}.joblib')
-
-        # build performance report based on scores, pipes and fit time
-        scores = scores.reshape(len(self.pipe_lst), -1)
-        scores_names = ['train_score', 'test_score',
-                        'val_score'][:scores.shape[1]]
-        scores = pd.DataFrame(scores, columns=scores_names)
-        if 'test_score' in scores.columns:
-            scores['train_test_dif'] = round(
-                scores['train_score'] / scores['test_score'], 2)
-        if 'val_score' in scores.columns:
-            scores['train_val_dif'] = round(
-                scores['train_score'] / scores['val_score'], 2)
-        pipes = pd.Series(pipes, name='pipeline')
-        pipe_names = pd.Series(pipe_names, name='pipe_name')
-        fit_time = pd.Series(self.fit_time_list, name='fit_time(H:M)')
-        performance_report = pd.concat(
-            [pipe_names, pipes, fit_time, scores], axis=1)
-
-        # save if needed
-        if self.save_performance is True:
-            self._save_report(performance_report, 'performance_report')
-        if self.save_values is True:
-            self._save_report(values_report, 'values_report')
-
-        return performance_report
+            error_train = self.scoring(y_train, y_pred_train)
+            if X_test is not None:
+                error_test = self.scoring(y_test, y_pred_test)
+            else:
+                error_test = np.nan
+            res = {'name': pipe_name,
+                   'params': f,
+                   'error_train': round(error_train, 2),
+                   'error_test': round(error_test, 2),
+                   'train_test_dif': round(error_test / error_train, 2),
+                   }
+            results.append(res)
+        results = pd.DataFrame.from_dict(results)
+        return results
