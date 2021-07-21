@@ -30,7 +30,7 @@ class AMLGridSearchCV:
         if scoring is None:
             self.scoring = mean_absolute_error
 
-    def _make_aml_combinations(self, pipeline, grid):
+    def _make_aml_combinations(self, pipeline, param_grid):
         fd = {}
         st = dict(pipeline.steps)
         ts = {v: k for k, v in st.items()}
@@ -49,7 +49,7 @@ class AMLGridSearchCV:
         pipelines_dict = list(_product_dict(**fd))
 
         for p in pipelines_dict:
-            for k, v in p.items():
+            for k, v in list(p.items()):
                 p[ts[v]] = p.pop(k)
 
         final_pipes = []
@@ -57,7 +57,7 @@ class AMLGridSearchCV:
 
             pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
 
-            clone_grid = deepcopy(grid)
+            clone_grid = deepcopy(param_grid)
 
             delete_indexes = []
             for g in clone_grid:

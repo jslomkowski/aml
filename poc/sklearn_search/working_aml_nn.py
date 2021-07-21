@@ -1,4 +1,3 @@
-from sklearn.model_selection import GridSearchCV
 import itertools
 import random
 import string
@@ -9,11 +8,12 @@ from keras.layers import Dense, Dropout
 from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.datasets import load_boston
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
-from sklearn.model_selection import ParameterGrid, train_test_split
+from sklearn.model_selection import (GridSearchCV, ParameterGrid,
+                                     train_test_split)
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
+from sklearn.preprocessing import Normalizer, StandardScaler
 
 X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
@@ -34,7 +34,7 @@ def create_model(optimizer='adagrad', dropout=0.2):
     return model
 
 
-model = KerasRegressor(build_fn=create_model, verbose=1)
+model = KerasRegressor(build_fn=create_model, verbose=0)
 
 
 param_grid = {
@@ -46,11 +46,13 @@ param_grid = {
 
 pipeline = Pipeline([
     ('ss1', StandardScaler()),
+    ('ss2', Normalizer()),
     ('model1', model)
+    # ('model1', RandomForestRegressor())
 ])
 
 
-def make_aml_combinations(pipeline, grid):
+def make_aml_combinations(pipeline, param_grid):
 
     # creates dictionary with unique steps and list of trans and models
     #  per step
@@ -102,17 +104,17 @@ def make_aml_combinations(pipeline, grid):
     # 'disc2': EqualWidthDiscretiser(),
     # 'model2': RandomForestRegressor()}]
     for p in pipelines_dict:
-        for k, v in p.items():
+        for k, v in list(p.items()):
             p[ts[v]] = p.pop(k)
 
     final_pipes = []
     for pipe_dict in pipelines_dict:
-        pipe_dict = pipelines_dict[0]
+
         # creates Pipeline object from pipelines_dict
         pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
 
         # hard copies param_grid
-        clone_grid = deepcopy(grid)
+        clone_grid = deepcopy(param_grid)
 
         # creates list with keys to delete from the param_grid
         delete_indexes = []

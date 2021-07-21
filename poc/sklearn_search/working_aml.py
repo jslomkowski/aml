@@ -1,9 +1,8 @@
+import itertools
 import random
 import string
-from sklearn.metrics import mean_absolute_error
-from multiprocessing import Pool
-import itertools
 from copy import deepcopy
+from multiprocessing import Pool
 
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -12,6 +11,7 @@ from feature_engine.imputation import MeanMedianImputer
 from sklearn.datasets import load_boston
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid, train_test_split
 from sklearn.pipeline import Pipeline
 
@@ -45,13 +45,13 @@ pipeline = Pipeline([
     ('model2', RandomForestRegressor())
 ])
 
-grid = {
+param_grid = {
     'disc1__q': [5, 15],
     'model2__n_estimators': [50, 150]
 }
 
 
-def make_aml_combinations(pipeline, grid):
+def make_aml_combinations(pipeline, param_grid):
 
     # creates dictionary with unique steps and list of trans and models
     #  per step
@@ -103,7 +103,7 @@ def make_aml_combinations(pipeline, grid):
     # 'disc2': EqualWidthDiscretiser(),
     # 'model2': RandomForestRegressor()}]
     for p in pipelines_dict:
-        for k, v in p.items():
+        for k, v in list(p.items()):
             p[ts[v]] = p.pop(k)
 
     final_pipes = []
@@ -113,7 +113,7 @@ def make_aml_combinations(pipeline, grid):
         pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
 
         # hard copies param_grid
-        clone_grid = deepcopy(grid)
+        clone_grid = deepcopy(param_grid)
 
         # creates list with keys to delete from the param_grid
         delete_indexes = []
