@@ -1,3 +1,5 @@
+from joblib import Parallel, delayed
+import time
 import numpy as np
 import random
 import string
@@ -74,28 +76,37 @@ class AMLGridSearchCV:
                 final_pipes.append(clone_pipe)
         return final_pipes
 
-    def fit(self, X_train, y_train, X_test=None, y_test=None):
+    def worker(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
         results = []
-        final_pipes = self._make_aml_combinations(
-            self.pipeline, self.param_grid)
-        for f in final_pipes:
-            f.fit(X_train, y_train)
-            y_pred_train = f.predict(X_train)
-            if X_test is not None:
-                y_pred_test = f.predict(X_test)
-            letters = string.ascii_lowercase
-            pipe_name = ''.join(random.choice(letters) for i in range(10))
-            error_train = self.scoring(y_train, y_pred_train)
-            if X_test is not None:
-                error_test = self.scoring(y_test, y_pred_test)
-            else:
-                error_test = np.nan
-            res = {'name': pipe_name,
-                   'params': f,
-                   'error_train': round(error_train, 2),
-                   'error_test': round(error_test, 2),
-                   'train_test_dif': round(error_test / error_train, 2),
-                   }
-            results.append(res)
-        results = pd.DataFrame.from_dict(results)
+        final_pipes.fit(X_train, y_train)
+        y_pred_train = final_pipes.predict(X_train)
+        if X_test is not None:
+            y_pred_test = final_pipes.predict(X_test)
+        letters = string.ascii_lowercase
+        pipe_name = ''.join(random.choice(letters) for i in range(10))
+        error_train = self.scoring(y_train, y_pred_train)
+        if X_test is not None:
+            error_test = self.scoring(y_test, y_pred_test)
+        else:
+            error_test = np.nan
+        res = {'name': pipe_name,
+               'params': final_pipes.named_steps,
+               'error_train': round(error_train, 2),
+               'error_test': round(error_test, 2),
+               'train_test_dif': round(error_test / error_train, 2),
+               }
+        results.append(res)
         return results
+
+    def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
+            prefer='processes'):
+        now = time.time()
+        results = Parallel(n_jobs=n_jobs, prefer=prefer)(
+            delayed(self.worker)(i, X_train, y_train, X_test, y_test) for i in
+            self._make_aml_combinations(self.pipeline, self.param_grid))
+        results = pd.DataFrame.from_dict([i[0] for i in results])
+        print(time.time() - now)
+        return results
+
+
+# pipeline, param_grid, n_jobs
