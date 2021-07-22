@@ -54,3 +54,5 @@ support for multiple transformers
 support for multiple models  
 support for keras neural networks  
 support for multiprocessing
+support for time series transformation
+support for time series statsmodels

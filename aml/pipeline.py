@@ -1,12 +1,12 @@
 import numpy as np
 import random
 import string
-from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.metrics import mean_absolute_error
 import itertools
 from copy import deepcopy
 
 import pandas as pd
-from sklearn.model_selection import ParameterGrid, GridSearchCV
+from sklearn.model_selection import ParameterGrid
 from sklearn.pipeline import Pipeline
 
 
