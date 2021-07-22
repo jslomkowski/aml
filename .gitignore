@@ -136,3 +136,5 @@ fvdf
 two.py
 pipeline2.py
 aml/one_smodels.py
+aml/ts.py
+aml/data_AUT_AL.pkl

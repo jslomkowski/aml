@@ -76,7 +76,7 @@ class AMLGridSearchCV:
                 final_pipes.append(clone_pipe)
         return final_pipes
 
-    def worker(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
+    def _worker(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
         results = []
         final_pipes.fit(X_train, y_train)
         y_pred_train = final_pipes.predict(X_train)
@@ -102,11 +102,8 @@ class AMLGridSearchCV:
             prefer='processes'):
         now = time.time()
         results = Parallel(n_jobs=n_jobs, prefer=prefer)(
-            delayed(self.worker)(i, X_train, y_train, X_test, y_test) for i in
+            delayed(self._worker)(i, X_train, y_train, X_test, y_test) for i in
             self._make_aml_combinations(self.pipeline, self.param_grid))
         results = pd.DataFrame.from_dict([i[0] for i in results])
         print(time.time() - now)
         return results
-
-
-# pipeline, param_grid, n_jobs
