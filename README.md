@@ -3,7 +3,19 @@
 ## This is WIP
 
 experimental package for machine learning automated pipelines that iterates through transformers and estimators to return performance report with errors
-
+- [aml](#aml)
+  - [This is WIP](#this-is-wip)
+  - [Install](#install)
+  - [Examples:](#examples)
+    - [simple pipeline example](#simple-pipeline-example)
+    - [simple pipeline gridsearch](#simple-pipeline-gridsearch)
+    - [Simple AML example](#simple-aml-example)
+    - [AML without grid search](#aml-without-grid-search)
+    - [AML with grid search](#aml-with-grid-search)
+    - [AML multiprocessing](#aml-multiprocessing)
+    - [AML with function transformer](#aml-with-function-transformer)
+    - [AML with class](#aml-with-class)
+    - [AML with neural networks](#aml-with-neural-networks)
 ## Install
 
 ```
@@ -12,7 +24,7 @@ pip install -e .
 
 ## Examples:
 
-simple pipeline example
+### simple pipeline example
 ```
 import pandas as pd
 from feature_engine.discretisation import EqualFrequencyDiscretiser
@@ -36,7 +48,7 @@ pipeline.fit(X_train, y_train)
 y_pred = pipeline.predict(X_test)
 
 ```
-simple pipeline gridsearch
+### simple pipeline gridsearch
 
 ```
 
@@ -67,7 +79,7 @@ gs = GridSearchCV(pipeline, param_grid)
 gs.fit(X_train, y_train)
 
 ```
-Simple AML example
+### Simple AML example
 ```
 
 import pandas as pd
@@ -98,7 +110,7 @@ gs = AMLGridSearchCV(pipeline, param_grid)
 results = gs.fit(X_train, y_train)
 
 ```
-AML without grid search
+### AML without grid search
 ```
 
 from sklearn.datasets import load_boston
@@ -129,7 +141,7 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 
 ```
-AML with grid search
+### AML with grid search
 ```
 
 from sklearn.datasets import load_boston
@@ -164,7 +176,7 @@ results = aml.fit(X_train, y_train, X_test, y_test)
 
 ```
 
-AML multiprocessing
+### AML multiprocessing
 ```
 
 from sklearn.datasets import load_boston
@@ -203,7 +215,7 @@ results = aml.fit(X_train, y_train, X_test, y_test, n_jobs=-1)
 
 ```
 
-AML with function transformer
+### AML with function transformer
 
 ```
 
@@ -240,7 +252,7 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 
 ```
-AML with class
+### AML with class
 ```
 
 import pandas as pd
@@ -281,7 +293,7 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 
 ```
-AML with neural networks
+### AML with neural networks
 
 ```
 
