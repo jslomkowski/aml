@@ -1,9 +1,13 @@
 import time
+import multiprocessing
+from joblib import Parallel, delayed
+from multiprocessing import cpu_count
 import itertools
 import random
 import string
 from copy import deepcopy
-from multiprocessing import Pool
+from joblib import Parallel
+from joblib import delayed
 
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -32,7 +36,7 @@ X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
 y = pd.Series(y)
 
-for i in range(12):
+for i in range(5):
     X = X.append(X)
     y = y.append(y)
 
@@ -135,30 +139,33 @@ def make_aml_combinations(pipeline, param_grid):
     return final_pipes
 
 
-def fit(final_pipes, metric):
+def worker(final_pipes):
     results = []
-    for f in final_pipes:
-        print(f)
-        f.fit(X_train, y_train)
-        y_pred_train = f.predict(X_train)
-        y_pred_test = f.predict(X_test)
-        letters = string.ascii_lowercase
-        pipe_name = ''.join(random.choice(letters) for i in range(10))
-        error_train = mean_absolute_error(y_train, y_pred_train)
-        error_test = mean_absolute_error(y_test, y_pred_test)
-        res = {'name': pipe_name,
-               'params': f,
-               'error_train': round(error_train, 2),
-               'error_test': round(error_test, 2),
-               'train_test_dif': round(error_test / error_train, 2),
-               }
-        results.append(res)
-    results = pd.DataFrame.from_dict(results)
-
+    final_pipes.fit(X_train, y_train)
+    y_pred_train = final_pipes.predict(X_train)
+    y_pred_test = final_pipes.predict(X_test)
+    letters = string.ascii_lowercase
+    pipe_name = ''.join(random.choice(letters) for i in range(10))
+    error_train = mean_absolute_error(y_train, y_pred_train)
+    error_test = mean_absolute_error(y_test, y_pred_test)
+    res = {'name': pipe_name,
+           'params': final_pipes.named_steps,
+           'error_train': round(error_train, 2),
+           'error_test': round(error_test, 2),
+           'train_test_dif': round(error_test / error_train, 2),
+           }
+    results.append(res)
     return results
 
 
-final_pipes = make_aml_combinations(pipeline, param_grid)
-now = time.time()
-results = fit(final_pipes, mean_absolute_error)
-print(time.time() - now)
+def fit(pipeline, param_grid):
+    now = time.time()
+    num_cores = multiprocessing.cpu_count()
+    results = Parallel(n_jobs=num_cores, prefer='threads')(delayed(
+        worker)(i)for i in make_aml_combinations(pipeline, param_grid))
+    print(time.time() - now)
+    return results
+
+
+results = fit(pipeline, param_grid)
+results = pd.DataFrame.from_dict([i[0] for i in results])
