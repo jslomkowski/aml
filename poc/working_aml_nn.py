@@ -1,6 +1,7 @@
 import itertools
 import random
 import string
+import time
 from copy import deepcopy
 
 import pandas as pd
@@ -8,16 +9,18 @@ from keras.layers import Dense, Dropout
 from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.datasets import load_boston
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
-from sklearn.model_selection import (GridSearchCV, ParameterGrid,
-                                     train_test_split)
+from sklearn.model_selection import ParameterGrid, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import Normalizer, StandardScaler
 
 X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
 y = pd.Series(y)
+
+for i in range(10):
+    X = X.append(X)
+    y = y.append(y)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
@@ -159,4 +162,6 @@ def fit(final_pipes, metric):
 
 
 final_pipes = make_aml_combinations(pipeline, param_grid)
+now = time.time()
 results = fit(final_pipes, mean_absolute_error)
+print(time.time() - now)

@@ -6,28 +6,15 @@ import time
 from copy import deepcopy
 
 import pandas as pd
-from feature_engine.discretisation import (EqualFrequencyDiscretiser,
-                                           EqualWidthDiscretiser)
-from feature_engine.imputation import MeanMedianImputer
 from joblib import Parallel, delayed
+from keras.layers import Dense, Dropout
+from keras.models import Sequential
+from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.datasets import load_boston
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid, train_test_split
 from sklearn.pipeline import Pipeline
-
-
-def _validate_steps(self):
-    names, estimators = zip(*self.steps)
-    self._validate_names(names)
-    transformers = estimators[:-1]
-    for t in transformers:
-        if t is None or t == 'passthrough':
-            continue
-
-
-Pipeline._validate_steps = _validate_steps
+from sklearn.preprocessing import Normalizer, StandardScaler
 
 X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
@@ -39,18 +26,35 @@ for i in range(10):
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-pipeline = Pipeline([
-    ('imp1', MeanMedianImputer()),
-    ('disc1', EqualFrequencyDiscretiser()),
-    ('disc2', EqualWidthDiscretiser()),
-    ('model1', LinearRegression()),
-    ('model2', RandomForestRegressor())
-])
+
+def create_model(optimizer='adagrad', dropout=0.2):
+    model = Sequential()
+    model.add(Dense(64, activation='relu'))
+    model.add(Dropout(dropout))
+    model.add(Dense(1, activation='relu'))
+
+    model.compile(loss='mean_absolute_error',
+                  optimizer='adam')
+
+    return model
+
+
+model = KerasRegressor(build_fn=create_model, verbose=0)
+
 
 param_grid = {
-    'disc1__q': [5, 15],
-    'model2__n_estimators': [50, 150]
+    # 'model1__optimizer': ['rmsprop', 'adam', 'adagrad'],
+    'model1__epochs': [4, 8],
+    'model1__dropout': [0.1, 0.2],
 }
+
+
+pipeline = Pipeline([
+    ('ss1', StandardScaler()),
+    ('ss2', Normalizer()),
+    ('model1', model)
+    # ('model1', RandomForestRegressor())
+])
 
 
 def make_aml_combinations(pipeline, param_grid):
@@ -158,7 +162,7 @@ def worker(final_pipes):
 def fit(pipeline, param_grid):
     now = time.time()
     num_cores = multiprocessing.cpu_count()
-    results = Parallel(n_jobs=num_cores, prefer='threads')(delayed(
+    results = Parallel(n_jobs=num_cores, prefer='processes')(delayed(
         worker)(i)for i in make_aml_combinations(pipeline, param_grid))
     print(time.time() - now)
     return results

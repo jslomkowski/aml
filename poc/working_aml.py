@@ -1,9 +1,8 @@
-import time
 import itertools
 import random
 import string
+import time
 from copy import deepcopy
-from multiprocessing import Pool
 
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -32,7 +31,7 @@ X, y = load_boston(return_X_y=True)
 X = pd.DataFrame(X)
 y = pd.Series(y)
 
-for i in range(12):
+for i in range(10):
     X = X.append(X)
     y = y.append(y)
 
