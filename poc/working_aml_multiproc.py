@@ -155,14 +155,13 @@ def worker(final_pipes):
     return results
 
 
-def fit(pipeline, param_grid):
+def fit(pipeline, param_grid, n_jobs):
     now = time.time()
-    num_cores = multiprocessing.cpu_count()
-    results = Parallel(n_jobs=num_cores, prefer='threads')(delayed(
+    results = Parallel(n_jobs=n_jobs, prefer='processes')(delayed(
         worker)(i)for i in make_aml_combinations(pipeline, param_grid))
     print(time.time() - now)
     return results
 
 
-results = fit(pipeline, param_grid)
+results = fit(pipeline, param_grid, n_jobs=-1)
 results = pd.DataFrame.from_dict([i[0] for i in results])
