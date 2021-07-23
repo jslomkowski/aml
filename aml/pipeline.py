@@ -1,15 +1,17 @@
-from joblib import Parallel, delayed
-import time
-import numpy as np
+import itertools
 import random
 import string
-from sklearn.metrics import mean_absolute_error
-import itertools
+import time
 from copy import deepcopy
 
+import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
+from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid
 from sklearn.pipeline import Pipeline
+
+from aml import config_dict
 
 
 def _validate_steps(self):
@@ -32,12 +34,29 @@ class AMLGridSearchCV:
         if scoring is None:
             self.scoring = mean_absolute_error
 
+    def check_def_config(pipeline, param_grid):
+        # ! ToDo
+        import inspect
+        import sys
+        clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+        for k in param_grid:
+            param_grid_key = k.split('__')[1]
+            for v in pipeline:
+                pipeline_value = str(v.__class__).split('.')[-1][:-2]
+                if param_grid_key == pipeline_value:
+                    for c in clsmembers:
+                        # print(c)
+                        if c[0] == param_grid_key:
+                            param_grid[k] = config_dict.regressor_config_dict[str(
+                                c[1])[str(c[1]).find("'") + 1:-2]]
+
+        pass
+
     def _make_aml_combinations(self, pipeline, param_grid):
         fd = {}
         st = dict(pipeline.steps)
         ts = {v: k for k, v in st.items()}
         for k, v in st.items():
-            # print(k, v)
             k = ''.join([i for i in k if not i.isdigit()])
             if k not in fd.keys():
                 fd[k] = [v]
@@ -56,19 +75,14 @@ class AMLGridSearchCV:
 
         final_pipes = []
         for pipe_dict in pipelines_dict:
-
             pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
-
             clone_grid = deepcopy(param_grid)
-
             delete_indexes = []
             for g in clone_grid:
                 if g.split('__')[0] not in pipe_dict:
                     delete_indexes.append(g)
-
             for k in delete_indexes:
                 clone_grid.pop(k, None)
-
             clone_grid_list = list(ParameterGrid(clone_grid))
             for c in clone_grid_list:
                 clone_pipe = deepcopy(pipe)
