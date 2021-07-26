@@ -1,6 +1,23 @@
 
 import numpy as np
 
+
+config_dict = {
+    'sklearn.ensemble._forest.RandomForestRegressor': {
+        'n_estimators': [100],
+        'max_features': np.arange(0.05, 1.01, 0.05),
+        'min_samples_split': range(2, 21),
+        'min_samples_leaf': range(1, 21),
+        'bootstrap': [True, False]
+    },
+
+    'sklearn.linear_model._base.LinearRegression': {
+        'normalize': [True, False],
+        'positive': [True, False]
+    }
+
+}
+
 regressor_config_dict = {
 
     'sklearn.linear_model.ElasticNetCV': {

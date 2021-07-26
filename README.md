@@ -15,8 +15,10 @@ see github wiki page
 
 ## ToDo:
 - CrossValidation
+- New report
 - Multiprocessing for NN (now it's only multithreading)
 - Support for statsmodels - ??
 - Time series split
-- Config dictionary templates
+- Config dictionary for param_grid
+- Config dictionary for models / transformers
 - Error handling
