@@ -14,11 +14,13 @@ pip install -e .
 see github wiki page
 
 ## ToDo:
-- CrossValidation
-- New report
-- Multiprocessing for NN (now it's only multithreading)
-- Support for statsmodels - ??
-- Time series split
-- Config dictionary for param_grid
-- Config dictionary for models / transformers
-- Error handling
+- [ ] Tests
+- [ ] Methods documentation
+- [ ] CrossValidation
+- [ ] New report
+- [ ] Multiprocessing for NN (now it's only multithreading)
+- [ ] Support for statsmodels - ??
+- [ ] Time series split
+- [x] Config dictionary for param_grid
+- [x] Config dictionary for models / transformers
+- [ ] Error handling
