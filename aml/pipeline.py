@@ -25,7 +25,7 @@ def _validate_steps(self):
 
 Pipeline._validate_steps = _validate_steps
 
-self = AMLGridSearchCV(pipeline, param_grid)
+# self = AMLGridSearchCV(pipeline, param_grid)
 
 
 class AMLGridSearchCV:
@@ -51,38 +51,78 @@ class AMLGridSearchCV:
                 pipeline_steps_list.append(p)
         return pipeline_steps_list
 
-    # def _check_def_config(self, pipeline_steps_list, param_grid):
-    #     # ! todo
-    #     something_list = []
-    #     for k in param_grid:
-    #         if len(k) > 1 and k[-1] == '*':
-    #             something_list.append(k.split('__')[0])
-    #         elif k == '*':
-    #             for p in pipeline_steps_list:
-    #                 something_list.append(p[0])
+    def _check_def_config(self, pipeline_steps_list, param_grid):
+        """Checks if user provided '*' symbol for whole param_grid or one of
+        it's classes. If so, default param_dict from config_template.py will be
+        used for whole dictionary or just that class
+        Example for one class:
 
-    #     search_list = []
-    #     for p in pipeline_steps_list:
-    #         if p[0] in something_list:
-    #             search_list.append(str(p[1].__class__)[8:][:-2])
+            param_grid = {
+                'disc1__q': [5, 15],
+                'model2__*': []
+            }
 
-    #     param_grid_mod = {}
-    #     for s in search_list:
-    #         print(s)
-    #         s = search_list[2]
-    #         try:
-    #             for c in config_dict[s]:
-    #                 print(c)
-    #                 param_grid_mod[pipeline_steps_list[0] + '__' + c] = config_dict[s][c]
-    #         except KeyError:
-    #             continue
+        Here, only model2__ will have its default config dictionary found in
+        config_template.py
 
-    #     return param_grid_mod
+        Example for whole config_dict:
+
+        param_grid = {'*'}
+
+        Here, _check_def_config mehod will find all classes provided by the
+        user in pipeline and all of their hyperparameters will be
+        extracted from config_template.py
+
+        Args:
+            pipeline_steps_list (list): list of pipeline steps from
+            _models_template_check list
+            param_grid (dictionary): dictionary with hyperparameters
+
+        Returns:
+            [dictionary]: dictionary with hyperparameters
+        """
+        # ! todo
+
+        # Checks if user has provided a star in param_dict.
+        is_star_list = []
+        for k in param_grid:
+            if len(k) > 1 and k[-1] == '*':
+                is_star_list.append(k.split('__')[0])
+            elif k == '*':
+                for p in pipeline_steps_list:
+                    is_star_list.append(p[0])
+
+        # If so then find class name for that class that has star attached to
+        # it.
+        search_list = {}
+        for p in pipeline_steps_list:
+            if p[0] in is_star_list:
+                search_list[p[0]] = str(p[1].__class__)[8:][:-2]
+
+        # For that class you found, search for its parameters in
+        # config_template.py and attach those to a new dict
+        param_grid_mod = {}
+        for k, v in search_list.items():
+            try:
+                for c in config_dict[v]:
+                    param_grid_mod[k + '__' + c] = config_dict[v][c]
+            except KeyError:
+                print(
+                    f'Unable to find default parameters for {k} in config_template')
+                continue
+
+        # Find and delete config with * and update param_grid_mod to param_grid
+        for kp in list(param_grid.keys()):
+            if kp[:-3] in search_list.keys() or kp == '*':
+                del param_grid[kp]
+        param_grid.update(param_grid_mod)
+
+        return param_grid
 
     def _make_aml_combinations(self, pipeline, param_grid):
 
         pipeline_steps_list = self._models_template_check(pipeline)
-        # param_grid = self._check_def_config(pipeline_steps_list, param_grid)
+        param_grid = self._check_def_config(pipeline_steps_list, param_grid)
 
         fd = {}
         st = dict(pipeline_steps_list)
