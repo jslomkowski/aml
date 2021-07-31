@@ -6,10 +6,12 @@ from sklearn.ensemble import RandomForestRegressor
 from aml import AMLGridSearchCV
 from sklearn.pipeline import Pipeline
 import pandas as pd
+import pytest
 
 
+@pytest.fixture(scope="session")
 def scenario_one():
-    """This is to create pipeline without params.
+    """This is to create pipeline test scenario one without params.
 
     Returns:
         [aml pipeline, pipeline and param_grid]: self explanatory
