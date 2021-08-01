@@ -7,10 +7,11 @@ from aml import AMLGridSearchCV
 from sklearn.pipeline import Pipeline
 import pandas as pd
 import pytest
+from aml.models_template import my_models_list
 
 
 @pytest.fixture(scope="session")
-def scenario_one():
+def scenario_without_params():
     """This is to create pipeline test scenario one without params.
 
     Returns:
@@ -27,6 +28,31 @@ def scenario_one():
         ('disc2', EqualWidthDiscretiser()),
         ('model1', LinearRegression()),
         ('model2', RandomForestRegressor())
+    ])
+
+    param_grid = {}
+
+    aml = AMLGridSearchCV(pipeline, param_grid)
+    return aml, pipeline, param_grid
+
+
+@pytest.fixture(scope="session")
+def scenario_with_import():
+    """This is to create pipeline test scenario one without params.
+
+    Returns:
+        [aml pipeline, pipeline and param_grid]: self explanatory
+    """
+    X, y = load_boston(return_X_y=True)
+    X = pd.DataFrame(X)
+    y = pd.Series(y)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    pipeline = Pipeline([
+        ('disc1', EqualFrequencyDiscretiser()),
+        ('disc2', EqualWidthDiscretiser()),
+        my_models_list
     ])
 
     param_grid = {}
