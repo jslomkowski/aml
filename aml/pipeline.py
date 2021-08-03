@@ -108,7 +108,7 @@ class AMLGridSearchCV:
                     param_grid_mod[k + '__' + c] = config_dict[v][c]
             except KeyError:
                 print(
-                    f'Unable to find default parameters for {k} in config_template')
+                    f'Unable to find config for {k} in config_template')
                 continue
 
         # Find and delete config with * and update param_grid_mod to param_grid
