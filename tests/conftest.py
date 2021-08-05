@@ -1,14 +1,11 @@
-import pandas as pd
 import pytest
 from aml import AMLGridSearchCV
+from aml.models_template import aml_basic_regressors
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                            EqualWidthDiscretiser)
-from sklearn.datasets import load_boston
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from aml.models_template import aml_basic_regressors
 
 
 @pytest.fixture(scope="session")
@@ -18,11 +15,6 @@ def scenario_without_params():
     Returns:
         [aml pipeline, pipeline and param_grid]: self explanatory
     """
-    X, y = load_boston(return_X_y=True)
-    X = pd.DataFrame(X)
-    y = pd.Series(y)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     pipeline = Pipeline([
         ('disc1', EqualFrequencyDiscretiser()),
@@ -38,18 +30,13 @@ def scenario_without_params():
 
 
 @pytest.fixture(scope="session")
-def scenario_with_class_import():
+def scenario_with_default_models_template():
     # ! TODO
     """This is to create pipeline test scenario one without params.
 
     Returns:
         [aml pipeline, pipeline and param_grid]: self explanatory
     """
-    X, y = load_boston(return_X_y=True)
-    X = pd.DataFrame(X)
-    y = pd.Series(y)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     pipeline = Pipeline([
         ('disc1', EqualFrequencyDiscretiser()),
@@ -58,6 +45,77 @@ def scenario_with_class_import():
     ])
 
     param_grid = {}
+
+    aml = AMLGridSearchCV(pipeline, param_grid)
+    return aml, pipeline, param_grid
+
+
+@pytest.fixture(scope="session")
+def scenario_with_custom_models_template():
+    # ! TODO
+    """This is to create pipeline test scenario one without params.
+
+    Returns:
+        [aml pipeline, pipeline and param_grid]: self explanatory
+    """
+
+    regressors = [
+        ('model1', LinearRegression()),
+        ('model2', RandomForestRegressor())
+    ]
+
+    pipeline = Pipeline([
+        ('disc1', EqualFrequencyDiscretiser()),
+        ('disc2', EqualWidthDiscretiser()),
+        regressors
+    ])
+
+    param_grid = {}
+
+    aml = AMLGridSearchCV(pipeline, param_grid)
+    return aml, pipeline, param_grid
+
+
+@pytest.fixture(scope="session")
+def scenario_with_grid_search_for_one_model():
+    # ! TODO
+    """This is to create pipeline test scenario one without params.
+
+    Returns:
+        [aml pipeline, pipeline and param_grid]: self explanatory
+    """
+
+    pipeline = Pipeline([
+        ('disc1', EqualFrequencyDiscretiser()),
+        ('disc2', EqualWidthDiscretiser()),
+        ('model1', LinearRegression()),
+        ('model2', RandomForestRegressor())
+    ])
+
+    param_grid = {
+        'disc1__q': [5, 15],
+        'model2__*': []
+    }
+
+    aml = AMLGridSearchCV(pipeline, param_grid)
+    return aml, pipeline, param_grid
+
+
+@pytest.fixture(scope="session")
+def scenario_with_grid_search_for_whole_pipeline():
+    # ! TODO
+    """This is to create pipeline test scenario one without params.
+
+    Returns:
+        [aml pipeline, pipeline and param_grid]: self explanatory
+    """
+
+    pipeline = Pipeline([
+        ('model1', LinearRegression()),
+        ('model2', RandomForestRegressor())
+    ])
+
+    param_grid = {'*'}
 
     aml = AMLGridSearchCV(pipeline, param_grid)
     return aml, pipeline, param_grid

@@ -5,8 +5,8 @@
   - [Simple AML example](#simple-aml-example)
   - [AML without grid search #1](#aml-without-grid-search-1)
   - [AML without grid search #2](#aml-without-grid-search-2)
-  - [AML with injected default classes](#aml-with-injected-default-classes)
-  - [AML with injected custom classes](#aml-with-injected-custom-classes)
+  - [AML with injected default models](#aml-with-injected-default-models)
+  - [AML with injected custom models](#aml-with-injected-custom-models)
   - [AML with grid search basic](#aml-with-grid-search-basic)
   - [AML with grid search for one model](#aml-with-grid-search-for-one-model)
   - [AML with grid search for whole pipeline](#aml-with-grid-search-for-whole-pipeline)
@@ -164,7 +164,7 @@ param_grid = {}
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML with injected default classes 
+### AML with injected default models 
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -193,7 +193,7 @@ param_grid = {}
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML with injected custom classes 
+### AML with injected custom models 
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,

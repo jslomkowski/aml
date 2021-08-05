@@ -9,6 +9,17 @@ experimental package for machine learning automated pipelines that iterates thro
 ```
 pip install -e .
 ```
+## Testing
+
+Make sure Tox is installed
+```
+pip install tox
+```
+after that run:
+
+```
+tox -e test_package
+```
 
 ## Examples:
 see github wiki page

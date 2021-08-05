@@ -44,12 +44,7 @@ class AMLGridSearchCV:
         """
         pipeline_steps_list = []
         for p in pipeline.steps:
-            if isinstance(p, str):
-                for t in templates:
-                    if p in templates.keys():
-                        for i in templates[p]:
-                            pipeline_steps_list.append(i)
-            elif isinstance(p, list):
+            if isinstance(p, list):
                 for i in p:
                     pipeline_steps_list.append(i)
             else:
@@ -117,11 +112,13 @@ class AMLGridSearchCV:
                 continue
 
         # Find and delete config with * and update param_grid_mod to param_grid
-        for kp in list(param_grid.keys()):
-            if kp[:-3] in search_list.keys() or kp == '*':
-                del param_grid[kp]
-        param_grid.update(param_grid_mod)
-
+        if param_grid != {'*'}:
+            for kp in list(param_grid.keys()):
+                if kp[:-3] in search_list.keys():
+                    del param_grid[kp]
+            param_grid.update(param_grid_mod)
+        else:
+            param_grid = param_grid_mod
         return param_grid
 
     def _make_aml_combinations(self, pipeline, param_grid):
