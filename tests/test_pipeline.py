@@ -91,8 +91,10 @@ def test_grid_search_for_whole_pipeline(scenario_with_grid_search_for_whole_pipe
         'model1__normalize': [True, False],
         'model1__positive': [True, False],
         'model2__n_estimators': [100],
-        'model2__max_features': np.array([0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55,
-                                          0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.]),
+        'model2__max_features': np.array([0.05, 0.1, 0.15, 0.2, 0.25, 0.3,
+                                          0.35, 0.4, 0.45, 0.5, 0.55, 0.6,
+                                          0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
+                                          0.95, 1.]),
         'model2__min_samples_split': range(2, 21),
         'model2__min_samples_leaf': range(1, 21),
         'model2__bootstrap': [True, False]}
