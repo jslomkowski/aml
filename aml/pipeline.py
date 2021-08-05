@@ -198,7 +198,7 @@ class AMLGridSearchCV:
         results = pd.DataFrame.from_dict([i[0] for i in results])
         if save_report:
             today = datetime.datetime.now()
-            today = today.strftime("%Y-%m-%d %H:%M:%S")
+            today = today.strftime("%Y-%m-%d %H-%M-%S")
             if not os.path.exists('aml_reports/'):
                 os.mkdir('aml_reports/')
             if report_format == 'csv':
@@ -206,5 +206,5 @@ class AMLGridSearchCV:
             elif report_format == 'xlsx':
                 results.to_excel(f'aml_reports/{today}.xlsx')
             else:
-                print(f'{report_format} - format unrecognised.')
+                print(f'{report_format} - report format unrecognised.')
         return results
