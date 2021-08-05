@@ -7,29 +7,22 @@ from sklearn.pipeline import Pipeline
 
 
 def test_how_many_pipelines_are_created(scenario_without_params):
-
     aml, pipeline, param_grid = scenario_without_params
     final_pipes = aml._make_aml_combinations(pipeline, param_grid)
-
     assert len(final_pipes) == 4
 
 
 def test_4th_step_in_scenario_without_params(scenario_without_params):
-
     aml, pipeline, param_grid = scenario_without_params
     final_pipes = aml._make_aml_combinations(pipeline, param_grid)
-
     check = [('disc2', EqualWidthDiscretiser()),
              ('model2', RandomForestRegressor())]
-
     assert str(final_pipes[3].steps) == str(check)
 
 
 def test_default_models_template(scenario_with_default_models_template):
-
     aml, pipeline, param_grid = scenario_with_default_models_template
     final_pipes = aml._make_aml_combinations(pipeline, param_grid)
-
     check = [Pipeline(steps=[('disc1', EqualFrequencyDiscretiser()),
                              ('model1', LinearRegression())]),
              Pipeline(steps=[('disc1', EqualFrequencyDiscretiser()),
@@ -38,15 +31,12 @@ def test_default_models_template(scenario_with_default_models_template):
                              ('model1', LinearRegression())]),
              Pipeline(steps=[('disc2', EqualWidthDiscretiser()),
                              ('model2', RandomForestRegressor())])]
-
     assert str(final_pipes) == str(check)
 
 
 def test_custom_models_template(scenario_with_custom_models_template):
-
     aml, pipeline, param_grid = scenario_with_custom_models_template
     final_pipes = aml._make_aml_combinations(pipeline, param_grid)
-
     check = [Pipeline(steps=[('disc1', EqualFrequencyDiscretiser()),
                              ('model1', LinearRegression())]),
              Pipeline(steps=[('disc1', EqualFrequencyDiscretiser()),
@@ -55,17 +45,13 @@ def test_custom_models_template(scenario_with_custom_models_template):
                              ('model1', LinearRegression())]),
              Pipeline(steps=[('disc2', EqualWidthDiscretiser()),
                              ('model2', RandomForestRegressor())])]
-
     assert str(final_pipes) == str(check)
 
 
 def test_grid_search_for_one_model(scenario_with_grid_search_for_one_model):
-
     aml, pipeline, param_grid = scenario_with_grid_search_for_one_model
-
     pipeline_steps_list = aml._models_template_check(pipeline)
     grid = aml._check_def_config(pipeline_steps_list, param_grid)
-
     check = {
         'disc1__q': [5, 15],
         'model2__n_estimators': [100],
@@ -76,17 +62,13 @@ def test_grid_search_for_one_model(scenario_with_grid_search_for_one_model):
         'model2__min_samples_split': range(2, 21),
         'model2__min_samples_leaf': range(1, 21),
         'model2__bootstrap': [True, False]}
-
     assert str(grid) == str(check)
 
 
 def test_grid_search_for_whole_pipeline(scenario_with_grid_search_for_whole_pipeline):
-
     aml, pipeline, param_grid = scenario_with_grid_search_for_whole_pipeline
-
     pipeline_steps_list = aml._models_template_check(pipeline)
     grid = aml._check_def_config(pipeline_steps_list, param_grid)
-
     check = {
         'model1__normalize': [True, False],
         'model1__positive': [True, False],
@@ -98,5 +80,4 @@ def test_grid_search_for_whole_pipeline(scenario_with_grid_search_for_whole_pipe
         'model2__min_samples_split': range(2, 21),
         'model2__min_samples_leaf': range(1, 21),
         'model2__bootstrap': [True, False]}
-
     assert str(grid) == str(check)
