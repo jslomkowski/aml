@@ -24,3 +24,4 @@ see github wiki page
 - [x] Config dictionary for param_grid
 - [x] Config dictionary for models / transformers
 - [ ] Error handling
+- [x] Examples
