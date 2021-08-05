@@ -2,4 +2,3 @@
 
 # testing requirements
 pytest
-psutil
