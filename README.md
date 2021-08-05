@@ -18,7 +18,7 @@ pip install tox
 after that run:
 
 ```
-tox -e test_package
+tox -e test_pipeline
 ```
 
 ## Examples:
