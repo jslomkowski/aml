@@ -1,13 +1,14 @@
-from sklearn.datasets import load_boston
-from sklearn.model_selection import train_test_split
-from feature_engine.discretisation import EqualFrequencyDiscretiser, EqualWidthDiscretiser
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from aml import AMLGridSearchCV
-from sklearn.pipeline import Pipeline
 import pandas as pd
 import pytest
-from aml.models_template import my_models_list
+from aml import AMLGridSearchCV
+from feature_engine.discretisation import (EqualFrequencyDiscretiser,
+                                           EqualWidthDiscretiser)
+from sklearn.datasets import load_boston
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from aml.models_template import aml_basic_regressors
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +38,8 @@ def scenario_without_params():
 
 
 @pytest.fixture(scope="session")
-def scenario_with_import():
+def scenario_with_class_import():
+    # ! TODO
     """This is to create pipeline test scenario one without params.
 
     Returns:
@@ -52,7 +54,7 @@ def scenario_with_import():
     pipeline = Pipeline([
         ('disc1', EqualFrequencyDiscretiser()),
         ('disc2', EqualWidthDiscretiser()),
-        my_models_list
+        aml_basic_regressors
     ])
 
     param_grid = {}

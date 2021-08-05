@@ -5,10 +5,11 @@
   - [Simple AML example](#simple-aml-example)
   - [AML without grid search #1](#aml-without-grid-search-1)
   - [AML without grid search #2](#aml-without-grid-search-2)
-  - [AML without grid search #3](#aml-without-grid-search-3)
-  - [AML with grid search #1](#aml-with-grid-search-1)
-  - [AML with grid search #2](#aml-with-grid-search-2)
-  - [AML with grid search #3](#aml-with-grid-search-3)
+  - [AML with injected default classes](#aml-with-injected-default-classes)
+  - [AML with injected custom classes](#aml-with-injected-custom-classes)
+  - [AML with grid search basic](#aml-with-grid-search-basic)
+  - [AML with grid search for one model](#aml-with-grid-search-for-one-model)
+  - [AML with grid search for whole pipeline](#aml-with-grid-search-for-whole-pipeline)
   - [AML multiprocessing](#aml-multiprocessing)
   - [AML with function transformer](#aml-with-function-transformer)
   - [AML with custom transformer](#aml-with-custom-transformer)
@@ -163,12 +164,43 @@ param_grid = {}
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML without grid search #3
+### AML with injected default classes 
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                            EqualWidthDiscretiser)
 from sklearn.datasets import load_boston
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+
+from aml import AMLGridSearchCV
+from aml.models_template import aml_basic_regressors
+
+X, y = load_boston(return_X_y=True)
+X = pd.DataFrame(X)
+y = pd.Series(y)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+pipeline = Pipeline([
+    ('disc1', EqualFrequencyDiscretiser()),
+    ('disc2', EqualWidthDiscretiser()),
+    aml_basic_regressors
+])
+
+param_grid = {}
+
+aml = AMLGridSearchCV(pipeline, param_grid)
+results = aml.fit(X_train, y_train, X_test, y_test)
+```
+### AML with injected custom classes 
+```
+import pandas as pd
+from feature_engine.discretisation import (EqualFrequencyDiscretiser,
+                                           EqualWidthDiscretiser)
+from sklearn.datasets import load_boston
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
@@ -180,18 +212,24 @@ y = pd.Series(y)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
+regressors = [
+    ('model1', LinearRegression()),
+    ('model2', RandomForestRegressor())
+]
+
 pipeline = Pipeline([
     ('disc1', EqualFrequencyDiscretiser()),
     ('disc2', EqualWidthDiscretiser()),
-    'basic_regresors'
+    regressors
 ])
 
 param_grid = {}
 
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
+
 ```
-### AML with grid search #1
+### AML with grid search basic
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -225,7 +263,7 @@ param_grid = {
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML with grid search #2
+### AML with grid search for one model
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -259,7 +297,7 @@ param_grid = {
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML with grid search #3
+### AML with grid search for whole pipeline
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,

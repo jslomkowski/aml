@@ -11,7 +11,6 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid
 from sklearn.pipeline import Pipeline
 from aml.config_template import config_dict
-from aml.classes_template import templates
 
 
 def _validate_steps(self):
@@ -47,10 +46,12 @@ class AMLGridSearchCV:
         for p in pipeline.steps:
             if isinstance(p, str):
                 for t in templates:
-                    if p in t.keys():
-                        t[p]
-                    for i in t[p]:
-                        pipeline_steps_list.append(i)
+                    if p in templates.keys():
+                        for i in templates[p]:
+                            pipeline_steps_list.append(i)
+            elif isinstance(p, list):
+                for i in p:
+                    pipeline_steps_list.append(i)
             else:
                 pipeline_steps_list.append(p)
         return pipeline_steps_list

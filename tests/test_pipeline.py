@@ -1,4 +1,3 @@
-from aml.models_template import my_models_list
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                            EqualWidthDiscretiser)
 from sklearn.ensemble import RandomForestRegressor
@@ -24,9 +23,9 @@ def test_4th_step_in_scenario_without_params(scenario_without_params):
     assert str(final_pipes[3].steps) == str(steps)
 
 
-def test_import_from_models_template(scenario_with_import):
+def test_import_from_class_import(scenario_with_class_import):
 
-    aml, pipeline, param_grid = scenario_with_import
+    aml, pipeline, param_grid = scenario_with_class_import
     final_pipes = aml._make_aml_combinations(pipeline, param_grid)
 
     pipelines = [Pipeline(steps=[('disc1', EqualFrequencyDiscretiser()),
