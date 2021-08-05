@@ -167,7 +167,9 @@ class AMLGridSearchCV:
 
     def _worker(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
         results = []
+        now = time.time()
         final_pipes.fit(X_train, y_train)
+        run_time = int(time.time() - now)
         y_pred_train = final_pipes.predict(X_train)
         if X_test is not None:
             y_pred_test = final_pipes.predict(X_test)
@@ -180,6 +182,7 @@ class AMLGridSearchCV:
             error_test = np.nan
         res = {'name': pipe_name,
                'params': [str(i) for i in list(final_pipes.named_steps.values())],
+               'run_time (sec)': run_time,
                'error_train': round(error_train, 2),
                'error_test': round(error_test, 2),
                'train_test_dif': round(error_test / error_train, 2),
@@ -188,17 +191,20 @@ class AMLGridSearchCV:
         return results
 
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
-            prefer='processes', save_report=True):
-        now = time.time()
+            prefer='processes', save_report=True, report_format='csv'):
         results = Parallel(n_jobs=n_jobs, prefer=prefer)(
             delayed(self._worker)(i, X_train, y_train, X_test, y_test) for i in
             self._make_aml_combinations(self.pipeline, self.param_grid))
         results = pd.DataFrame.from_dict([i[0] for i in results])
-        print(time.time() - now)
         if save_report:
+            today = datetime.datetime.now()
+            today = today.strftime("%Y-%m-%d %H:%M:%S")
             if not os.path.exists('aml_reports/'):
                 os.mkdir('aml_reports/')
-            today = datetime.datetime.now()
-            results.to_csv(
-                f'aml_reports/{today.strftime("%Y-%m-%d %H:%M:%S")}.csv')
+            if report_format == 'csv':
+                results.to_csv(f'aml_reports/{today}.csv', index=False)
+            elif report_format == 'xlsx':
+                results.to_excel(f'aml_reports/{today}.xlsx')
+            else:
+                print(f'{report_format} - format unrecognised.')
         return results
