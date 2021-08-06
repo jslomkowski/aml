@@ -3,7 +3,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 
 
 class SMWrapper(BaseEstimator, RegressorMixin):
-    """ A universal sklearn-style wrapper for statsmodels regressors
+    """ A universal sklearn-style wrapper for statsmodels aml_basic_regressors
     credit: https://stackoverflow.com/a/48949667/8147500"""
 
     def __init__(self, model_class, fit_intercept=True):

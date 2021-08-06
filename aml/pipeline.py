@@ -1,3 +1,5 @@
+import datetime
+import os
 import itertools
 import random
 import string
@@ -11,10 +13,11 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid
 from sklearn.pipeline import Pipeline
 from aml.config_template import config_dict
-# from aml import config_dict
 
 
 def _validate_steps(self):
+    """This is a simple monkey patch to allow multiple models in pipeline.
+    """
     names, estimators = zip(*self.steps)
     self._validate_names(names)
     transformers = estimators[:-1]
@@ -37,16 +40,17 @@ class AMLGridSearchCV:
             self.scoring = mean_absolute_error
 
     def _models_template_check(self, pipeline):
-        """Checks if user has provided nested sk-learn classes, for example
-        nested models from models_template
+        """Checks if user has provided nested sk-learn classes in pipeline,
+        for example nested models from models_template. This is used in
+        injecting models example.
         Returns:
             [list]: list with unpacked pipeline steps.
         """
         pipeline_steps_list = []
         for p in pipeline.steps:
             if isinstance(p, list):
-                for _ in p:
-                    pipeline_steps_list.append(_)
+                for i in p:
+                    pipeline_steps_list.append(i)
             else:
                 pipeline_steps_list.append(p)
         return pipeline_steps_list
@@ -62,7 +66,7 @@ class AMLGridSearchCV:
                 'model2__*': []
             }
 
-        Here, only model2__ will have its default config dictionary found in
+        Here, only model2__ will have it's default config dictionary found in
         config_template.py
 
         Example for whole config_dict:
@@ -75,15 +79,14 @@ class AMLGridSearchCV:
 
         Args:
             pipeline_steps_list (list): list of pipeline steps from
-            _models_template_check list
+            _models_template_check list method
             param_grid (dictionary): dictionary with hyperparameters
 
         Returns:
             [dictionary]: dictionary with hyperparameters
         """
-        # ! todo
-
-        # Checks if user has provided a star in param_dict.
+        # Checks if user has provided a star in param_dict. If so it will
+        # unpack into list string coresponding to class.
         is_star_list = []
         for k in param_grid:
             if len(k) > 1 and k[-1] == '*':
@@ -92,8 +95,7 @@ class AMLGridSearchCV:
                 for p in pipeline_steps_list:
                     is_star_list.append(p[0])
 
-        # If so then find class name for that class that has star attached to
-        # it.
+        # Finds class name for that classes that have star attached to it.
         search_list = {}
         for p in pipeline_steps_list:
             if p[0] in is_star_list:
@@ -108,22 +110,35 @@ class AMLGridSearchCV:
                     param_grid_mod[k + '__' + c] = config_dict[v][c]
             except KeyError:
                 print(
-                    f'Unable to find default parameters for {k} in config_template')
+                    f'Unable to find config for {k} in config_template')
                 continue
 
         # Find and delete config with * and update param_grid_mod to param_grid
-        for kp in list(param_grid.keys()):
-            if kp[:-3] in search_list.keys() or kp == '*':
-                del param_grid[kp]
-        param_grid.update(param_grid_mod)
-
+        if param_grid != {'*'}:
+            for kp in list(param_grid.keys()):
+                if kp[:-3] in search_list.keys():
+                    del param_grid[kp]
+            param_grid.update(param_grid_mod)
+        else:
+            param_grid = param_grid_mod
         return param_grid
 
     def _make_aml_combinations(self, pipeline, param_grid):
+        """This is the primary function that takes pipeline and param_grid
+        provided by the user and creates combination of pipelines for later
+        training.
 
+        Args:
+            pipeline (Pipeline): sklearn Pipeline
+            param_grid (dict): dictionary with hyperparameters to optimize
+
+        Returns:
+            [list]: List with pipelines with parameters to train.
+        """
         pipeline_steps_list = self._models_template_check(pipeline)
         param_grid = self._check_def_config(pipeline_steps_list, param_grid)
 
+        # Packs classes in pipeline into single list based on block
         fd = {}
         st = dict(pipeline_steps_list)
         ts = {v: k for k, v in st.items()}
@@ -134,16 +149,20 @@ class AMLGridSearchCV:
             else:
                 fd[k].append(v)
 
+        # Creates combination of every pipeline class
         def _product_dict(**kwargs):
             for instance in itertools.product(*kwargs.values()):
                 yield dict(zip(kwargs.keys(), instance))
 
         pipelines_dict = list(_product_dict(**fd))
 
+        # Ads numbers to string blck
         for p in pipelines_dict:
             for k, v in list(p.items()):
                 p[ts[v]] = p.pop(k)
 
+        # For every pipeline in pipelines_dict create clone of that pipeline
+        # and apply grid params
         final_pipes = []
         for pipe_dict in pipelines_dict:
             pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
@@ -162,8 +181,23 @@ class AMLGridSearchCV:
         return final_pipes
 
     def _worker(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
+        """This is for multiprocessing. Worker will fit, score and create
+        report for one pipeline.
+
+        Args:
+            final_pipes (list): List with pipelines to test
+            X_train (df or array): Train data
+            y_train (df or array): Train responses
+            X_test (df or array, optional): Test data. Defaults to None.
+            y_test (df or array, optional): Test responses. Defaults to None.
+
+        Returns:
+            [list]: list with results per one pipeline.
+        """
         results = []
+        now = time.time()
         final_pipes.fit(X_train, y_train)
+        run_time = int(time.time() - now)
         y_pred_train = final_pipes.predict(X_train)
         if X_test is not None:
             y_pred_test = final_pipes.predict(X_test)
@@ -176,6 +210,7 @@ class AMLGridSearchCV:
             error_test = np.nan
         res = {'name': pipe_name,
                'params': final_pipes.named_steps,
+               'train_time (sec)': run_time,
                'error_train': round(error_train, 2),
                'error_test': round(error_test, 2),
                'train_test_dif': round(error_test / error_train, 2),
@@ -184,11 +219,22 @@ class AMLGridSearchCV:
         return results
 
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
-            prefer='processes'):
-        now = time.time()
+            prefer='processes', save_report=True, report_format='xlsx'):
+        """# ! doc ToDo - this method keeps on evolving
+        """
         results = Parallel(n_jobs=n_jobs, prefer=prefer)(
             delayed(self._worker)(i, X_train, y_train, X_test, y_test) for i in
             self._make_aml_combinations(self.pipeline, self.param_grid))
         results = pd.DataFrame.from_dict([i[0] for i in results])
-        print(time.time() - now)
+        if save_report:
+            today = datetime.datetime.now()
+            today = today.strftime("%Y-%m-%d %H-%M-%S")
+            if not os.path.exists('aml_reports/'):
+                os.mkdir('aml_reports/')
+            if report_format == 'csv':
+                results.to_csv(f'aml_reports/{today}.csv', index=False)
+            elif report_format == 'xlsx':
+                results.to_excel(f'aml_reports/{today}.xlsx')
+            else:
+                print(f'{report_format} - report format unrecognised.')
         return results

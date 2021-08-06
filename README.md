@@ -9,12 +9,23 @@ experimental package for machine learning automated pipelines that iterates thro
 ```
 pip install -e .
 ```
+## Testing
+
+Make sure Tox is installed
+```
+pip install tox
+```
+after that run:
+
+```
+tox -e test_pipeline
+```
 
 ## Examples:
 see github wiki page
 
 ## ToDo:
-- [ ] Tests
+- [x] Tests
 - [ ] Methods documentation
 - [ ] CrossValidation
 - [ ] New report
@@ -24,3 +35,4 @@ see github wiki page
 - [x] Config dictionary for param_grid
 - [x] Config dictionary for models / transformers
 - [ ] Error handling
+- [x] Examples

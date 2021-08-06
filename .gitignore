@@ -127,14 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# custom
 one.py
-reports/*
-pipes/*
-fvdf
-.vscode/settings.json
-.vscode/launch.json
 two.py
-pipeline2.py
-aml/one_smodels.py
-aml/ts.py
-aml/data_AUT_AL.pkl
+.vscode/
+aml_reports

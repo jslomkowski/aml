@@ -1,6 +1,7 @@
+# This is hyperparameters template you can use in param_grid so you
+#  don't have to type that much ;)
 
 import numpy as np
-
 
 config_dict = {
     'sklearn.ensemble._forest.RandomForestRegressor': {
