@@ -25,7 +25,7 @@ tox -e test_pipeline
 see github wiki page
 
 ## ToDo:
-- [ ] Tests
+- [x] Tests
 - [ ] Methods documentation
 - [ ] CrossValidation
 - [ ] New report
