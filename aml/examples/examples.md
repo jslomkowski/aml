@@ -135,7 +135,8 @@ results = aml.fit(X_train, y_train, X_test, y_test)
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                            EqualWidthDiscretiser)
-from feature_engine.encoding import OneHotEncoder, RareLabelEncoder
+from feature_engine.transformation import PowerTransformer
+from feature_engine.outliers import Winsorizer
 from sklearn.datasets import load_boston
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -153,8 +154,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 pipeline = Pipeline([
     ('disc1', EqualFrequencyDiscretiser()),
     ('disc2', EqualWidthDiscretiser()),
-    ('rle1', RareLabelEncoder()),
-    ('ohe1', OneHotEncoder()),
+    ('pow1', PowerTransformer()),
+    ('out1', Winsorizer()),
     ('model1', LinearRegression()),
     ('model2', RandomForestRegressor())
 ])

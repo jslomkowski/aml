@@ -181,8 +181,8 @@ class AMLGridSearchCV:
         else:
             error_test = np.nan
         res = {'name': pipe_name,
-               'params': [str(i) for i in list(final_pipes.named_steps.values())],
-               'run_time (sec)': run_time,
+               'params': final_pipes.named_steps,
+               'train_time (sec)': run_time,
                'error_train': round(error_train, 2),
                'error_test': round(error_test, 2),
                'train_test_dif': round(error_test / error_train, 2),
@@ -191,7 +191,7 @@ class AMLGridSearchCV:
         return results
 
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
-            prefer='processes', save_report=True, report_format='csv'):
+            prefer='processes', save_report=True, report_format='xlsx'):
         results = Parallel(n_jobs=n_jobs, prefer=prefer)(
             delayed(self._worker)(i, X_train, y_train, X_test, y_test) for i in
             self._make_aml_combinations(self.pipeline, self.param_grid))
