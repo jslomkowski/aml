@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 def list_reqs(fname='requirements.txt'):
@@ -11,7 +11,5 @@ setup(
     version='0.1',
     description='xtreme gridsearchCV',
     author='Jerzy Słomkowski',
-    packages=find_packages(exclude=['tests']),
     install_requires=list_reqs()
-
 )
