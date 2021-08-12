@@ -1,5 +1,4 @@
 import shutil
-import os
 from sklearn.datasets import load_boston
 import numpy as np
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,

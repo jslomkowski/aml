@@ -5,6 +5,7 @@
   - [Simple AML example](#simple-aml-example)
   - [AML without grid search #1](#aml-without-grid-search-1)
   - [AML without grid search #2](#aml-without-grid-search-2)
+  - [AML without grid search #3](#aml-without-grid-search-3)
   - [AML with injected default models](#aml-with-injected-default-models)
   - [AML with injected custom models](#aml-with-injected-custom-models)
   - [AML with grid search basic](#aml-with-grid-search-basic)
@@ -19,6 +20,10 @@
 ## Examples:
 
 ### Simple pipeline example
+
+Through the tutorials below imports and cutting data into train and test, sets
+is a standard procedure, the only thing that is changing is the pipeline and param_grid. Below is the sklearn.pipeline from which AML originated
+
 ```
 import pandas as pd
 from feature_engine.discretisation import EqualFrequencyDiscretiser
@@ -42,6 +47,9 @@ pipeline.fit(X_train, y_train)
 y_pred = pipeline.predict(X_test)
 ```
 ### Simple pipeline gridsearch
+
+But what if you wanted to optimize hyperparameters of it? You can use sklearn
+GridSearchCV
 ```
 import pandas as pd
 from feature_engine.discretisation import EqualFrequencyDiscretiser
@@ -70,6 +78,8 @@ gs = GridSearchCV(pipeline, param_grid)
 gs.fit(X_train, y_train)
 ```
 ### Simple AML example
+
+Above examples are usage of scikit-learn. You can do the same thing with using AML. All you have to do is import AMLGridsearchCV from aml and change GridsearchCV to AMLGridsearchCV 
 ```
 import pandas as pd
 from feature_engine.discretisation import EqualFrequencyDiscretiser
@@ -100,6 +110,14 @@ gs = AMLGridSearchCV(pipeline, param_grid)
 results = gs.fit(X_train, y_train)
 ```
 ### AML without grid search #1
+
+If you don't want to provide any parameters then simply pass empty param_grid dictionary, all scikit-learn transformers and estimators have default parameters, also notice that you can use multiple models in the pipeline ('model1 and model2), functionality that is not available in scikit-learn. Here AML will give you all of the combinations from inside of the pipeline 
+```
+disc1 with model1
+disc1 with model2
+disc2 with model1
+disc2 with model2
+```
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -131,6 +149,13 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
 ### AML without grid search #2
+Another example of only pipeline object without param_grid. The key to understand AML is to understand block objects (those strings before class, like 'model1' or 'disc1) it is up to you to decide how you name them, just make sure that if you want to create the grouping then you have to use the same string with a number in the end. In this example, 'pow1' and 'out1' have no other transformers so the final pipes will look like so:
+```
+disc1, pow1, out1, model1
+disc2, pow1, out1, model1
+disc1, pow1, out1, model2
+disc2, pow1, out1, model2
+```
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -165,7 +190,50 @@ param_grid = {}
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML with injected default models 
+### AML without grid search #3
+Below is an example with 5 different models. Combinations that will be created:
+```
+disc1 with model1
+disc1 with model2
+disc1 with model3
+disc1 with model4
+disc1 with model5
+```
+```
+import pandas as pd
+from feature_engine.discretisation import EqualFrequencyDiscretiser
+from sklearn.datasets import load_boston
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.tree import DecisionTreeRegressor
+
+from aml import AMLGridSearchCV
+
+X, y = load_boston(return_X_y=True)
+X = pd.DataFrame(X)
+y = pd.Series(y)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+pipeline = Pipeline([
+    ('disc1', EqualFrequencyDiscretiser()),
+    ('model1', LinearRegression()),
+    ('model2', RandomForestRegressor()),
+    ('model3', DecisionTreeRegressor()),
+    ('model4', GradientBoostingRegressor()),
+    ('model5', KNeighborsRegressor()),
+])
+
+param_grid = {}
+
+aml = AMLGridSearchCV(pipeline, param_grid)
+results = aml.fit(X_train, y_train, X_test, y_test)
+```
+### AML with injected default models
+if you don't want to type too much you can use a predefined template from AML
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -194,7 +262,8 @@ param_grid = {}
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML with injected custom models 
+### AML with injected custom models
+or create your own template and inject it into the pipeline.
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -231,6 +300,10 @@ results = aml.fit(X_train, y_train, X_test, y_test)
 
 ```
 ### AML with grid search basic
+Here is the example of simple grid search. Naming convention should be: 
+```
+block_string_from_pipeline(dunder)hyperparameter_of_that_class
+```
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -265,6 +338,15 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
 ### AML with grid search for one model
+Like in the previous example you can use custom hyperparameters but if you want AML to do the work just provide * (star) instead of hyperparameter name. In the example below * means:
+```
+'n_estimators': [100],
+'max_features': np.arange(0.05, 1.01, 0.05),
+'min_samples_split': range(2, 21),
+'min_samples_leaf': range(1, 21),
+'bootstrap': [True, False]
+```
+see the documentation or config_template module for supported templates.
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -299,6 +381,7 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
 ### AML with grid search for whole pipeline
+The below example is pretty hardcore. You can inject hyperparameters to every supported class by providing '*' in param_grid.
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -330,6 +413,7 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
 ### AML multiprocessing
+# !!! ToDo
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,

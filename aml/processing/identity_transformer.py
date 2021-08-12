@@ -9,4 +9,4 @@ class IdentityTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, input_array, y=None):
-        return input_array*1
+        return input_array * 1

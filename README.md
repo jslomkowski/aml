@@ -26,7 +26,7 @@ see github wiki page
 
 ## ToDo:
 - [x] Tests
-- [ ] Methods documentation
+- [x] Methods documentation
 - [ ] CrossValidation
 - [ ] New report
 - [ ] Multiprocessing for NN (now it's only multithreading)

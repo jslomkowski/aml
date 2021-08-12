@@ -1,3 +1,4 @@
+from datetime import timedelta
 import datetime
 import os
 import itertools
@@ -109,8 +110,7 @@ class AMLGridSearchCV:
                 for c in config_dict[v]:
                     param_grid_mod[k + '__' + c] = config_dict[v][c]
             except KeyError:
-                print(
-                    f'Unable to find config for {k} in config_template')
+                print(f'Unable to find config for {k} in config_template')
                 continue
 
         # Find and delete config with * and update param_grid_mod to param_grid
@@ -180,7 +180,7 @@ class AMLGridSearchCV:
                 final_pipes.append(clone_pipe)
         return final_pipes
 
-    def _worker(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
+    def _worker(self, final_pipes, combinations, verbose, X_train, y_train, X_test=None, y_test=None):
         """This is for multiprocessing. Worker will fit, score and create
         report for one pipeline.
 
@@ -196,6 +196,9 @@ class AMLGridSearchCV:
         """
         results = []
         now = time.time()
+        if verbose:
+            print(f'fitting {combinations.index(final_pipes)+1} of {len(combinations)}',
+                  ' '.join(str(i) for i in final_pipes.named_steps.values()))
         final_pipes.fit(X_train, y_train)
         run_time = int(time.time() - now)
         y_pred_train = final_pipes.predict(X_train)
@@ -213,18 +216,24 @@ class AMLGridSearchCV:
                'train_time (sec)': run_time,
                'error_train': round(error_train, 2),
                'error_test': round(error_test, 2),
-               'train_test_dif': round(error_test / error_train, 2),
+               'train_test_dif': round(error_train / error_test, 2),
                }
         results.append(res)
         return results
 
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
-            prefer='processes', save_report=True, report_format='xlsx'):
+            prefer='processes', save_report=True, report_format='xlsx',
+            verbose=True):
         """# ! doc ToDo - this method keeps on evolving
         """
+        start = time.time()
+        combinations = self._make_aml_combinations(
+            self.pipeline, self.param_grid)
         results = Parallel(n_jobs=n_jobs, prefer=prefer)(
-            delayed(self._worker)(i, X_train, y_train, X_test, y_test) for i in
-            self._make_aml_combinations(self.pipeline, self.param_grid))
+            delayed(self._worker)(i, combinations, verbose, X_train, y_train, X_test, y_test) for i in
+            combinations)
+        elapsed = (int(time.time() - start))
+        print(f'total run time: {str(timedelta(seconds=elapsed))}')
         results = pd.DataFrame.from_dict([i[0] for i in results])
         if save_report:
             today = datetime.datetime.now()
