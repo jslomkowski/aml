@@ -17,12 +17,17 @@
 
 # -- Project information -----------------------------------------------------
 
+from pathlib import Path
 project = 'AML'
 copyright = '2021, Jerzy Słomkowski'
 author = 'Jerzy Słomkowski'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+
+# Path(__file__).parents[2]
+with open(Path(__file__).parents[2] / "aml/VERSION") as f:
+    version = f.read().strip()
+release = version
 
 
 # -- General configuration ---------------------------------------------------
