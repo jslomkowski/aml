@@ -9,20 +9,9 @@ experimental package for machine learning automated pipelines that iterates thro
 ```
 pip install -e .
 ```
-## Testing
-
-Make sure Tox is installed
-```
-pip install tox
-```
-after that run:
-
-```
-tox -e test_pipeline
-```
 
 ## Examples:
-see github wiki page
+see github wiki page or documentation in /aml/docs/build/html/index.html
 
 ## ToDo:
 - [x] Tests

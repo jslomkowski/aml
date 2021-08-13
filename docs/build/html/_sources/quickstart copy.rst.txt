@@ -1,0 +1,28 @@
+Quick Start
+=====
+
+Through the tutorials below imports and cutting data into train and test, sets
+is a standard procedure, the only thing that is changing is the pipeline and param_grid. Below is the sklearn.pipeline from which AML originated
+
+.. code:: python
+
+    import pandas as pd
+    from feature_engine.discretisation import EqualFrequencyDiscretiser
+    from sklearn.datasets import load_boston
+    from sklearn.linear_model import LinearRegression
+    from sklearn.model_selection import train_test_split
+    from sklearn.pipeline import Pipeline
+
+    X, y = load_boston(return_X_y=True)
+    X = pd.DataFrame(X)
+    y = pd.Series(y)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    pipeline = Pipeline([
+        ('disc1', EqualFrequencyDiscretiser()),
+        ('model1', LinearRegression()),
+    ])
+
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)

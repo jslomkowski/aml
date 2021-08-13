@@ -33,12 +33,51 @@ Pipeline._validate_steps = _validate_steps
 
 
 class AMLGridSearchCV:
+    """Main AML class
 
-    def __init__(self, pipeline, param_grid, scoring=None):
+    Parameters:
+        pipeline : list
+            List of (name, transform) tuples (implementing fit/transform) that
+            are chained, in the order in which they are chained.
+
+            .. code-block:: python
+
+                pipeline = Pipeline([
+                    ('disc1', EqualFrequencyDiscretiser()),
+                    ('model1', LinearRegression()),
+                ])
+
+        param_grid : dict, optional
+            dictionary with hyperparameters for the pipeline parameter. Names
+            of objects to assign hyperparameters to should follow Scikit-learn
+            naming convention from `GridSearchCV <https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html?highlight=gridsearchcv#sklearn.model_selection.GridSearchCV>`_
+            param_grid parameter.
+
+            .. code-block:: python
+
+                param_grid = {
+                    'disc1__q': [5, 15],
+                    'model1__normalize': [True, False]
+                }
+
+        scoring : callable
+            Strategy to evaluate the performance of the models. See
+            `Scikit-learn metrics. <https://scikit-learn.org/stable/modules/classes.html?highlight=metrics#module-sklearn.metrics>`_
+            By default: mean_absolute_error.
+
+
+            .. code-block:: python
+
+                aml = AMLGridSearchCV(pipeline, scoring=r2_score)
+
+        """
+
+    def __init__(self, pipeline, param_grid=None, scoring=mean_absolute_error):
+
         self.pipeline = pipeline
-        self.param_grid = param_grid
-        if scoring is None:
-            self.scoring = mean_absolute_error
+        if param_grid is None:
+            self.param_grid = {}
+        self.scoring = scoring
 
     def _models_template_check(self, pipeline):
         """Checks if user has provided nested sk-learn classes in pipeline,
@@ -224,8 +263,43 @@ class AMLGridSearchCV:
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
             prefer='processes', save_report=True, report_format='xlsx',
             verbose=True):
-        """# ! doc ToDo - this method keeps on evolving
+        """Fit method will go through the whole process of creating AML
+        combinations.
+
+        Parameters:
+            X_train : array-like of shape (n_samples, n_features)
+                Training vector, where n_samples is the number of samples and
+                n_features is the number of features.
+            y_train : array-like of shape (n_samples, n_output) or (n_samples,)
+                Target relative to X_train for classification or regression.
+            X_test : array-like of shape (n_samples, n_features), optional
+                Testing vector, where n_samples is the number of samples and
+                n_features is the number of features, by default None
+            y_test : array-like of shape (n_samples, n_output) or (n_samples,), optional
+                Target relative to X_test for classification or regression, by
+                default None.
+            n_jobs : int, optional
+                Number of jobs to run in parallel by joblib library. None means
+                1 unless in a joblib.parallel_backend context. -1 means using
+                all processors, by default None
+            prefer : str, optional
+                joblib ``prefer`` parameter. Can be ``processes`` for
+                multiprocessing or ``threads`` multithreading, by default
+                ``processes``
+            save_report : bool, optional
+                Do you want to save final report with performance per pipeline
+                ``True`` or not ``False``, by default ``True``
+            report_format : str, optional
+                Currently supported are 'xlsx' or 'csv' file formats, by
+                default 'xlsx'
+            verbose : bool, optional
+                Controls the verbosity, by default True
+
+        Returns:
+            Pandas DataFrame
+                Final report with performance for all pipelines.
         """
+
         start = time.time()
         combinations = self._make_aml_combinations(
             self.pipeline, self.param_grid)

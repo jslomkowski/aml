@@ -1,5 +1,3 @@
-import shutil
-from sklearn.datasets import load_boston
 import numpy as np
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                            EqualWidthDiscretiser)
@@ -83,17 +81,3 @@ def test_grid_search_for_whole_pipeline(scenario_with_grid_search_for_whole_pipe
         'model2__min_samples_leaf': range(1, 21),
         'model2__bootstrap': [True, False]}
     assert str(grid) == str(check)
-
-
-def test_reports(scenario_without_params):
-    # ! TODO
-    X, y = load_boston(return_X_y=True)
-    aml, pipeline, param_grid = scenario_without_params
-    aml.fit(X, y, save_report=True, report_format='csv')
-    aml.fit(X, y, save_report=True, report_format='xlsx')
-    aml.fit(X, y, save_report=True, report_format='abc')
-    # check = os.listdir('aml_reports')[0][-3:] + \
-    #     os.listdir('aml_reports')[1][-4:]
-    shutil.rmtree('aml_reports')
-    # assert check == 'csvxlsx'
-    pass
