@@ -76,7 +76,9 @@ class AMLGridSearchCV:
 
         self.pipeline = pipeline
         if param_grid is None:
-            self.param_grid = {}
+            self.param_grid = dict()
+        else:
+            self.param_grid = param_grid
         self.scoring = scoring
 
     def _models_template_check(self, pipeline):

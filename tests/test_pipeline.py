@@ -20,6 +20,18 @@ def test_4th_step_in_scenario_without_params(scenario_without_params):
     assert str(final_pipes[3].steps) == str(check)
 
 
+def test_dict_exists_but_no_params_provided(scenario_without_params):
+    aml, pipeline, param_grid = scenario_without_params
+    assert not param_grid
+
+
+def test_dict_does_not_exists(scenario_without_params):
+    aml, pipeline, param_grid = scenario_without_params
+    del param_grid
+    check = 'param_grid' in locals()
+    assert check is False
+
+
 def test_default_models_template(scenario_with_default_models_template):
     aml, pipeline, param_grid = scenario_with_default_models_template
     final_pipes = aml._make_aml_combinations(pipeline, param_grid)

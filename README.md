@@ -10,6 +10,12 @@ experimental package for machine learning automated pipelines that iterates thro
 pip install -e .
 ```
 
+## Tests
+
+```
+tox -e test_pipeline
+```
+
 ## Examples:
 see github wiki page or documentation in /aml/docs/build/html/index.html
 
