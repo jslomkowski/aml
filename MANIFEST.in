@@ -4,9 +4,6 @@ include *.cfg
 include *.pkl
 recursive-include ./aml/*
 
-include aml/datasets/train.csv
-include aml/datasets/test.csv
-include aml/trained_models/*.pkl
 include aml/VERSION
 
 include ./requirements.txt
