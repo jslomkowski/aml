@@ -85,8 +85,6 @@ class AMLGridSearchCV:
         """Checks if user has provided nested sk-learn classes in pipeline,
         for example nested models from models_template. This is used in
         injecting models example.
-        Returns:
-            [list]: list with unpacked pipeline steps.
         """
         pipeline_steps_list = []
         for p in pipeline.steps:
@@ -168,13 +166,6 @@ class AMLGridSearchCV:
         """This is the primary function that takes pipeline and param_grid
         provided by the user and creates combination of pipelines for later
         training.
-
-        Args:
-            pipeline (Pipeline): sklearn Pipeline
-            param_grid (dict): dictionary with hyperparameters to optimize
-
-        Returns:
-            [list]: List with pipelines with parameters to train.
         """
         pipeline_steps_list = self._models_template_check(pipeline)
         param_grid = self._check_def_config(pipeline_steps_list, param_grid)
@@ -221,30 +212,23 @@ class AMLGridSearchCV:
                 final_pipes.append(clone_pipe)
         return final_pipes
 
-    def _worker(self, final_pipes, combinations, verbose, X_train, y_train, X_test=None, y_test=None):
+    def _worker(self, today, save_prediction_report, final_pipes, combinations,
+                verbose, X_train, y_train, X_test=None, y_test=None):
         """This is for multiprocessing. Worker will fit, score and create
-        report for one pipeline.
-
-        Args:
-            final_pipes (list): List with pipelines to test
-            X_train (df or array): Train data
-            y_train (df or array): Train responses
-            X_test (df or array, optional): Test data. Defaults to None.
-            y_test (df or array, optional): Test responses. Defaults to None.
-
-        Returns:
-            [list]: list with results per one pipeline.
+        report for one pipeline. _worker is run multiple times in fit()
         """
-        results = []
+        performance_results = []
         now = time.time()
         if verbose:
             print(f'fitting {combinations.index(final_pipes)+1} of {len(combinations)}',
                   ' '.join(str(i) for i in final_pipes.named_steps.values()))
         final_pipes.fit(X_train, y_train)
         run_time = int(time.time() - now)
-        y_pred_train = final_pipes.predict(X_train)
+        y_pred_train = pd.Series(
+            final_pipes.predict(X_train), name='y_pred_train', index=X_train.index)
         if X_test is not None:
-            y_pred_test = final_pipes.predict(X_test)
+            y_pred_test = pd.Series(
+                final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
         letters = string.ascii_lowercase
         pipe_name = ''.join(random.choice(letters) for i in range(10))
         error_train = self.scoring(y_train, y_pred_train)
@@ -259,11 +243,51 @@ class AMLGridSearchCV:
                'error_test': round(error_test, 2),
                'train_test_dif': round(error_train / error_test, 2),
                }
-        results.append(res)
-        return results
+        if save_prediction_report:
+            self._generate_prediction_report(
+                today, pipe_name, X_train, y_pred_train, X_test, y_pred_test)
+        performance_results.append(res)
+        return performance_results
+
+    def _today(self):
+        """Generates today's date and time as string.
+        """
+        today = datetime.datetime.now()
+        today = today.strftime("%Y-%m-%d %H-%M-%S")
+        return today
+
+    def _generate_prediction_report(self, today, pipe_name, X_train,
+                                    y_pred_train, X_test, y_pred_test):
+        """Creates csv files in aml_reports folder. Each csv is train or test
+        data with attached predictions.
+        """
+        if not os.path.exists('aml_reports/'):
+            os.mkdir('aml_reports/')
+        if not os.path.exists(f'aml_reports/{today}_prediction_report'):
+            print(f'aml_reports/{today}_prediction_report/')
+            os.mkdir(f'aml_reports/{today}_prediction_report/')
+        train = pd.concat([X_train, y_pred_train], axis=1)
+        test = pd.concat([X_test, y_pred_test], axis=1)
+        train.to_csv(
+            f'aml_reports/{today}_prediction_report/train_{pipe_name}.csv')
+        test.to_csv(
+            f'aml_reports/{today}_prediction_report/test_{pipe_name}.csv')
+
+    def _generate_preformance_report(self, today, performance_results, report_format):
+        """Creates performance report that will be used in fit
+        """
+        if not os.path.exists('aml_reports/'):
+            os.mkdir('aml_reports/')
+        if report_format == 'csv':
+            performance_results.to_csv(f'aml_reports/{today}.csv', index=False)
+        elif report_format == 'xlsx':
+            performance_results.to_excel(f'aml_reports/{today}.xlsx')
+        else:
+            print(f'{report_format} - report format unrecognised.')
 
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
-            prefer='processes', save_report=True, report_format='xlsx',
+            prefer='processes', save_performance_report=True,
+            performance_report_format='xlsx', save_prediction_report=False,
             verbose=True):
         """Fit method will go through the whole process of creating AML
         combinations.
@@ -277,7 +301,8 @@ class AMLGridSearchCV:
             X_test : array-like of shape (n_samples, n_features), optional
                 Testing vector, where n_samples is the number of samples and
                 n_features is the number of features, by default None
-            y_test : array-like of shape (n_samples, n_output) or (n_samples,), optional
+            y_test : array-like of shape (n_samples, n_output) or (n_samples),
+            optional
                 Target relative to X_test for classification or regression, by
                 default None.
             n_jobs : int, optional
@@ -288,12 +313,15 @@ class AMLGridSearchCV:
                 joblib ``prefer`` parameter. Can be ``processes`` for
                 multiprocessing or ``threads`` multithreading, by default
                 ``processes``
-            save_report : bool, optional
+            save_performance_report : bool, optional
                 Do you want to save final report with performance per pipeline
                 ``True`` or not ``False``, by default ``True``
-            report_format : str, optional
+            performance_report_format : str, optional
                 Currently supported are 'xlsx' or 'csv' file formats, by
                 default 'xlsx'
+            save_prediction_report : bool, optional
+                Do you want to save predictions per pipeline as a report
+                ``True`` or not ``False``, by default ``False``
             verbose : bool, optional
                 Controls the verbosity, by default True
 
@@ -303,23 +331,17 @@ class AMLGridSearchCV:
         """
 
         start = time.time()
+        today = self._today()
         combinations = self._make_aml_combinations(
             self.pipeline, self.param_grid)
-        results = Parallel(n_jobs=n_jobs, prefer=prefer)(
-            delayed(self._worker)(i, combinations, verbose, X_train, y_train, X_test, y_test) for i in
-            combinations)
+        performance_results = Parallel(n_jobs=n_jobs, prefer=prefer)(
+            delayed(self._worker)(today, save_prediction_report, i, combinations,
+                                  verbose, X_train, y_train, X_test, y_test) for i in combinations)
         elapsed = (int(time.time() - start))
         print(f'total run time: {str(timedelta(seconds=elapsed))}')
-        results = pd.DataFrame.from_dict([i[0] for i in results])
-        if save_report:
-            today = datetime.datetime.now()
-            today = today.strftime("%Y-%m-%d %H-%M-%S")
-            if not os.path.exists('aml_reports/'):
-                os.mkdir('aml_reports/')
-            if report_format == 'csv':
-                results.to_csv(f'aml_reports/{today}.csv', index=False)
-            elif report_format == 'xlsx':
-                results.to_excel(f'aml_reports/{today}.xlsx')
-            else:
-                print(f'{report_format} - report format unrecognised.')
-        return results
+        performance_results = pd.DataFrame.from_dict(
+            [i[0] for i in performance_results])
+        if save_performance_report:
+            self._generate_preformance_report(
+                today, performance_results, performance_report_format)
+        return performance_results
