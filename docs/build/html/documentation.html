@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="Quick Start" href="quickstart.html" />
 
     <meta name="generator" content="sphinx-4.0.2, furo 2021.08.11.beta42"/>
-        <title>Api documentation - AML 0.2.0 documentation</title>
+        <title>Api documentation - AML 0.3.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=197f00461d56902ea7ca048ec6e6ba026f62c97b" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=93475b62d1c3bc01323a0eefdc14a62d77b12690" />
@@ -121,7 +121,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">AML 0.2.0 documentation</div></a>
+      <a href="index.html"><div class="brand">AML 0.3.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -144,7 +144,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">AML 0.2.0 documentation</span>
+  <span class="sidebar-brand-text">AML 0.3.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
@@ -222,9 +222,8 @@ By default: mean_absolute_error.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'processes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xlsx'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span></dt>
-<dd><p>Fit method will go through the whole process of creating AML
-combinations.</p>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'processes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_performance_report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">performance_report_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xlsx'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_prediction_report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Fit method will go through the whole process of creating AML combinations.</p>
 <dl class="simple">
 <dt>Parameters:</dt><dd><dl class="simple">
 <dt>X_train<span class="classifier">array-like of shape (n_samples, n_features)</span></dt><dd><p>Training vector, where n_samples is the number of samples and
@@ -235,7 +234,8 @@ n_features is the number of features.</p>
 <dt>X_test<span class="classifier">array-like of shape (n_samples, n_features), optional</span></dt><dd><p>Testing vector, where n_samples is the number of samples and
 n_features is the number of features, by default None</p>
 </dd>
-<dt>y_test<span class="classifier">array-like of shape (n_samples, n_output) or (n_samples,), optional</span></dt><dd><p>Target relative to X_test for classification or regression, by
+<dt>y_test<span class="classifier">array-like of shape (n_samples, n_output) or (n_samples),</span></dt><dd><p>optional
+Target relative to X_test for classification or regression, by
 default None.</p>
 </dd>
 <dt>n_jobs<span class="classifier">int, optional</span></dt><dd><p>Number of jobs to run in parallel by joblib library. None means
@@ -246,11 +246,19 @@ all processors, by default None</p>
 multiprocessing or <code class="docutils literal notranslate"><span class="pre">threads</span></code> multithreading, by default
 <code class="docutils literal notranslate"><span class="pre">processes</span></code></p>
 </dd>
-<dt>save_report<span class="classifier">bool, optional</span></dt><dd><p>Do you want to save final report with performance per pipeline
-<code class="docutils literal notranslate"><span class="pre">True</span></code> or not <code class="docutils literal notranslate"><span class="pre">False</span></code>, by default <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
+<dt>save_performance_report<span class="classifier">bool, optional</span></dt><dd><p>Do you want to save final report with performance per pipeline
+<code class="docutils literal notranslate"><span class="pre">True</span></code> or not <code class="docutils literal notranslate"><span class="pre">False</span></code>, by default <code class="docutils literal notranslate"><span class="pre">True</span></code>. Reports will be
+saved in aml_reports directory.</p>
 </dd>
-<dt>report_format<span class="classifier">str, optional</span></dt><dd><p>Currently supported are ‘xlsx’ or ‘csv’ file formats, by
+<dt>performance_report_format<span class="classifier">str, optional</span></dt><dd><p>Currently supported are ‘xlsx’ or ‘csv’ file formats, by
 default ‘xlsx’</p>
+</dd>
+<dt>save_prediction_report<span class="classifier">bool, optional</span></dt><dd><p>Do you want to save predictions per pipeline as a report
+<code class="docutils literal notranslate"><span class="pre">True</span></code> or not <code class="docutils literal notranslate"><span class="pre">False</span></code>, by default <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+save_prediction_report will create directory in aml_reports
+with timestamp of tests performed. Inside there will be csv
+files with data trained and predictions attached as last
+column.</p>
 </dd>
 <dt>verbose<span class="classifier">bool, optional</span></dt><dd><p>Controls the verbosity, by default True</p>
 </dd>

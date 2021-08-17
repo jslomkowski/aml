@@ -289,8 +289,7 @@ class AMLGridSearchCV:
             prefer='processes', save_performance_report=True,
             performance_report_format='xlsx', save_prediction_report=False,
             verbose=True):
-        """Fit method will go through the whole process of creating AML
-        combinations.
+        """Fit method will go through the whole process of creating AML combinations.
 
         Parameters:
             X_train : array-like of shape (n_samples, n_features)
@@ -302,7 +301,7 @@ class AMLGridSearchCV:
                 Testing vector, where n_samples is the number of samples and
                 n_features is the number of features, by default None
             y_test : array-like of shape (n_samples, n_output) or (n_samples),
-            optional
+                optional
                 Target relative to X_test for classification or regression, by
                 default None.
             n_jobs : int, optional
@@ -315,13 +314,18 @@ class AMLGridSearchCV:
                 ``processes``
             save_performance_report : bool, optional
                 Do you want to save final report with performance per pipeline
-                ``True`` or not ``False``, by default ``True``
+                ``True`` or not ``False``, by default ``True``. Reports will be
+                saved in aml_reports directory.
             performance_report_format : str, optional
                 Currently supported are 'xlsx' or 'csv' file formats, by
                 default 'xlsx'
             save_prediction_report : bool, optional
                 Do you want to save predictions per pipeline as a report
-                ``True`` or not ``False``, by default ``False``
+                ``True`` or not ``False``, by default ``False``.
+                save_prediction_report will create directory in aml_reports
+                with timestamp of tests performed. Inside there will be csv
+                files with data trained and predictions attached as last
+                column.
             verbose : bool, optional
                 Controls the verbosity, by default True
 

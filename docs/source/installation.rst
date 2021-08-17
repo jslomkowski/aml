@@ -17,9 +17,12 @@ For tests first install Tox:
 .. code-block:: console
 
     pip install tox
+    # and then execute:
+    tox -e test_pipeline
 
-and then execute:
+To build documentation:
 
 .. code-block:: console
 
-    tox -e test_pipeline
+    cd docs
+    make html
