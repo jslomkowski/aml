@@ -245,7 +245,8 @@ class AMLGridSearchCV:
                }
         if save_prediction_report:
             self._generate_prediction_report(
-                today, pipe_name, X_train, y_pred_train, X_test, y_pred_test)
+                today, pipe_name, X_train, y_train, y_pred_train, X_test,
+                y_test, y_pred_test)
         performance_results.append(res)
         return performance_results
 
