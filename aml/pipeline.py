@@ -212,8 +212,9 @@ class AMLGridSearchCV:
                 final_pipes.append(clone_pipe)
         return final_pipes
 
-    def _worker(self, today, save_prediction_report, final_pipes, combinations,
-                verbose, X_train, y_train, X_test=None, y_test=None):
+    def _worker(self, today, save_prediction_report, prediction_report_format,
+                final_pipes, combinations, verbose, X_train, y_train,
+                X_test=None, y_test=None):
         """This is for multiprocessing. Worker will fit, score and create
         report for one pipeline. _worker is run multiple times in fit()
         """
@@ -246,7 +247,7 @@ class AMLGridSearchCV:
         if save_prediction_report:
             self._generate_prediction_report(
                 today, pipe_name, X_train, y_train, y_pred_train, X_test,
-                y_test, y_pred_test)
+                y_test, y_pred_test, prediction_report_format)
         performance_results.append(res)
         return performance_results
 
@@ -350,7 +351,8 @@ class AMLGridSearchCV:
         combinations = self._make_aml_combinations(
             self.pipeline, self.param_grid)
         performance_results = Parallel(n_jobs=n_jobs, prefer=prefer)(
-            delayed(self._worker)(today, save_prediction_report, i, combinations,
+            delayed(self._worker)(today, save_prediction_report,
+                                  prediction_report_format, i, combinations,
                                   verbose, X_train, y_train, X_test, y_test) for i in combinations)
         elapsed = (int(time.time() - start))
         print(f'total run time: {str(timedelta(seconds=elapsed))}')
