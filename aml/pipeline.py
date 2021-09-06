@@ -256,8 +256,9 @@ class AMLGridSearchCV:
         today = today.strftime("%Y-%m-%d %H-%M-%S")
         return today
 
-    def _generate_prediction_report(self, today, pipe_name, X_train,
-                                    y_pred_train, X_test, y_pred_test):
+    def _generate_prediction_report(self, today, pipe_name, X_train, y_train,
+                                    y_pred_train, X_test, y_test, y_pred_test,
+                                    prediction_report_format):
         """Creates csv files in aml_reports folder. Each csv is train or test
         data with attached predictions.
         """
@@ -266,29 +267,38 @@ class AMLGridSearchCV:
         if not os.path.exists(f'aml_reports/{today}_prediction_report'):
             print(f'aml_reports/{today}_prediction_report/')
             os.mkdir(f'aml_reports/{today}_prediction_report/')
-        train = pd.concat([X_train, y_pred_train], axis=1)
-        test = pd.concat([X_test, y_pred_test], axis=1)
-        train.to_csv(
-            f'aml_reports/{today}_prediction_report/train_{pipe_name}.csv')
-        test.to_csv(
-            f'aml_reports/{today}_prediction_report/test_{pipe_name}.csv')
+        train = pd.concat([X_train, y_train, y_pred_train], axis=1)
+        test = pd.concat([X_test, y_test, y_pred_test], axis=1)
+        if prediction_report_format == 'csv':
+            train.to_csv(
+                f'aml_reports/{today}_prediction_report/train_{pipe_name}.csv',
+                index=False)
+            test.to_csv(
+                f'aml_reports/{today}_prediction_report/test_{pipe_name}.csv',
+                index=False)
+        else:
+            train.to_excel(
+                f'aml_reports/{today}_prediction_report/train_{pipe_name}.xlsx')
+            test.to_excel(
+                f'aml_reports/{today}_prediction_report/test_{pipe_name}.xlsx')
 
-    def _generate_preformance_report(self, today, performance_results, report_format):
+    def _generate_preformance_report(self, today, performance_results,
+                                     performance_report_format):
         """Creates performance report that will be used in fit
         """
         if not os.path.exists('aml_reports/'):
             os.mkdir('aml_reports/')
-        if report_format == 'csv':
+        if performance_report_format == 'csv':
             performance_results.to_csv(f'aml_reports/{today}.csv', index=False)
-        elif report_format == 'xlsx':
+        elif performance_report_format == 'xlsx':
             performance_results.to_excel(f'aml_reports/{today}.xlsx')
         else:
-            print(f'{report_format} - report format unrecognised.')
+            print(f'{performance_report_format} - report format unrecognised.')
 
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
             prefer='processes', save_performance_report=True,
             performance_report_format='xlsx', save_prediction_report=False,
-            verbose=True):
+            prediction_report_format='csv', verbose=True):
         """Fit method will go through the whole process of creating AML combinations.
 
         Parameters:
