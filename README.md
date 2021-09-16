@@ -20,6 +20,9 @@ tox -e test_pipeline
 see github wiki page or documentation in /aml/docs/build/html/index.html
 
 ## ToDo:
+- [ ] Error handling (if pipe member breaks then continue)
+- [ ] Execute one pipe from pipelines
+- [ ] Be able to do only transformations (without modeling)
 - [x] Tests
 - [x] Methods documentation
 - [ ] CrossValidation
@@ -29,5 +32,4 @@ see github wiki page or documentation in /aml/docs/build/html/index.html
 - [ ] Time series split
 - [x] Config dictionary for param_grid
 - [x] Config dictionary for models / transformers
-- [ ] Error handling
 - [x] Examples
