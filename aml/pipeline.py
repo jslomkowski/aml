@@ -220,31 +220,37 @@ class AMLGridSearchCV:
         """
         performance_results = []
         now = time.time()
+        letters = string.ascii_lowercase
+        pipe_name = ''.join(random.choice(letters) for i in range(10))
         if verbose:
             print(f'fitting {combinations.index(final_pipes)+1} of {len(combinations)}',
                   ' '.join(str(i) for i in final_pipes.named_steps.values()))
-        final_pipes.fit(X_train, y_train)
-        run_time = int(time.time() - now)
-        y_pred_train = pd.Series(
-            final_pipes.predict(X_train), name='y_pred_train', index=X_train.index)
-        if X_test is not None:
-            try:
-                y_pred_test = pd.Series(
-                    final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
-                exception_message = ''
-            except Exception as e1:
-                y_pred_test = pd.Series(
-                    np.nan, name='y_pred_test', index=X_test.index)
-                exception_message = str(e1)
-        letters = string.ascii_lowercase
-        pipe_name = ''.join(random.choice(letters) for i in range(10))
-        error_train = self.scoring(y_train, y_pred_train)
-        if X_test is not None:
-            try:
-                error_test = self.scoring(y_test, y_pred_test)
-            except ValueError:
+        try:
+            final_pipes.fit(X_train, y_train)
+            run_time = int(time.time() - now)
+            y_pred_train = pd.Series(
+                final_pipes.predict(X_train), name='y_pred_train', index=X_train.index)
+            if X_test is not None:
+                try:
+                    y_pred_test = pd.Series(
+                        final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
+                    exception_message = ''
+                except Exception as e:
+                    y_pred_test = pd.Series(
+                        np.nan, name='y_pred_test', index=X_test.index)
+                    exception_message = str(e)
+            error_train = self.scoring(y_train, y_pred_train)
+            if X_test is not None:
+                try:
+                    error_test = self.scoring(y_test, y_pred_test)
+                except ValueError:
+                    error_test = np.nan
+            else:
                 error_test = np.nan
-        else:
+        except ValueError as e:
+            exception_message = str(e)
+            run_time = ''
+            error_train = np.nan
             error_test = np.nan
         res = {'params': final_pipes.named_steps,
                'name': pipe_name,
