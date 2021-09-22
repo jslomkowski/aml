@@ -228,21 +228,32 @@ class AMLGridSearchCV:
         y_pred_train = pd.Series(
             final_pipes.predict(X_train), name='y_pred_train', index=X_train.index)
         if X_test is not None:
-            y_pred_test = pd.Series(
-                final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
+            try:
+                y_pred_test = pd.Series(
+                    final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
+                exception_message = ''
+            except Exception as e1:
+                y_pred_test = pd.Series(
+                    np.nan, name='y_pred_test', index=X_test.index)
+                exception_message = str(e1)
         letters = string.ascii_lowercase
         pipe_name = ''.join(random.choice(letters) for i in range(10))
         error_train = self.scoring(y_train, y_pred_train)
         if X_test is not None:
-            error_test = self.scoring(y_test, y_pred_test)
+            try:
+                error_test = self.scoring(y_test, y_pred_test)
+            except ValueError:
+                error_test = np.nan
         else:
             error_test = np.nan
-        res = {'name': pipe_name,
-               'params': final_pipes.named_steps,
+        res = {'params': final_pipes.named_steps,
+               'name': pipe_name,
+               'steps': ' '.join([str(v.__class__).split('.')[-1][:-2] for v in final_pipes.named_steps.values()]),
                'train_time (sec)': run_time,
                'error_train': round(error_train, 2),
                'error_test': round(error_test, 2),
                'train_test_dif': round(error_train / error_test, 2),
+               'error': exception_message,
                }
         if save_prediction_report:
             self._generate_prediction_report(
