@@ -252,14 +252,14 @@ class AMLGridSearchCV:
             run_time = ''
             error_train = np.nan
             error_test = np.nan
-        res = {'params': final_pipes.named_steps,
+        res = {'params_dict': final_pipes.named_steps,
                'name': pipe_name,
                'steps': ' '.join([str(v.__class__).split('.')[-1][:-2] for v in final_pipes.named_steps.values()]),
                'train_time (sec)': run_time,
                'error_train': round(error_train, 2),
                'error_test': round(error_test, 2),
                'train_test_dif': round(error_train / error_test, 2),
-               'error': exception_message,
+               'error': exception_message
                }
         if save_prediction_report:
             self._generate_prediction_report(
