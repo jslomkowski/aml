@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from datetime import timedelta
 import datetime
 import os
@@ -219,12 +221,13 @@ class AMLGridSearchCV:
         report for one pipeline. _worker is run multiple times in fit()
         """
         performance_results = []
+        performance_params = {}
         now = time.time()
         letters = string.ascii_lowercase
         pipe_name = ''.join(random.choice(letters) for i in range(10))
         if verbose:
-            print(f'fitting {combinations.index(final_pipes)+1} of {len(combinations)}',
-                  ' '.join(str(i) for i in final_pipes.named_steps.values()))
+            print(
+                f'fitting pipeline {combinations.index(final_pipes)+1} of {len(combinations)}')
         try:
             final_pipes.fit(X_train, y_train)
             run_time = int(time.time() - now)
@@ -247,6 +250,10 @@ class AMLGridSearchCV:
                     error_test = np.nan
             else:
                 error_test = np.nan
+            for k, v in final_pipes.get_params().items():
+                if k.find('__') > 0:
+                    if k in self.param_grid:
+                        performance_params.update({k: v})
         except ValueError as e:
             exception_message = str(e)
             run_time = ''
@@ -266,7 +273,7 @@ class AMLGridSearchCV:
                 today, pipe_name, X_train, y_train, y_pred_train, X_test,
                 y_test, y_pred_test, prediction_report_format)
         performance_results.append(res)
-        return performance_results
+        return performance_results, performance_params
 
     def _today(self):
         """Generates today's date and time as string.
@@ -367,14 +374,18 @@ class AMLGridSearchCV:
         today = self._today()
         combinations = self._make_aml_combinations(
             self.pipeline, self.param_grid)
-        performance_results = Parallel(n_jobs=n_jobs, prefer=prefer)(
+        joined_results = Parallel(n_jobs=n_jobs, prefer=prefer)(
             delayed(self._worker)(today, save_prediction_report,
                                   prediction_report_format, i, combinations,
                                   verbose, X_train, y_train, X_test, y_test) for i in combinations)
         elapsed = (int(time.time() - start))
         print(f'total run time: {str(timedelta(seconds=elapsed))}')
         performance_results = pd.DataFrame.from_dict(
-            [i[0] for i in performance_results])
+            [i[0][0] for i in joined_results])
+        performance_params = pd.DataFrame.from_dict(
+            [i[1] for i in joined_results])
+        performance_results = pd.concat(
+            [performance_results, performance_params], axis=1)
         if save_performance_report:
             self._generate_preformance_report(
                 today, performance_results, performance_report_format)
