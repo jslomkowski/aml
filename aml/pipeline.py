@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from datetime import timedelta
 import datetime
 import os
@@ -233,23 +231,21 @@ class AMLGridSearchCV:
             run_time = int(time.time() - now)
             y_pred_train = pd.Series(
                 final_pipes.predict(X_train), name='y_pred_train', index=X_train.index)
+            error_train = self.scoring(y_train, y_pred_train)
             if X_test is not None:
                 try:
                     y_pred_test = pd.Series(
                         final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
                     exception_message = ''
-                except Exception as e:
+                    error_test = self.scoring(y_test, y_pred_test)
+                except ValueError as e:
                     y_pred_test = pd.Series(
                         np.nan, name='y_pred_test', index=X_test.index)
                     exception_message = str(e)
-            error_train = self.scoring(y_train, y_pred_train)
-            if X_test is not None:
-                try:
-                    error_test = self.scoring(y_test, y_pred_test)
-                except ValueError:
                     error_test = np.nan
             else:
                 error_test = np.nan
+                exception_message = ''
             for k, v in final_pipes.get_params().items():
                 if k.find('__') > 0:
                     if k in self.param_grid:
