@@ -1,11 +1,11 @@
-from datetime import timedelta
 import datetime
-import os
 import itertools
+import os
 import random
 import string
 import time
 from copy import deepcopy
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,7 @@ from joblib import Parallel, delayed
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid
 from sklearn.pipeline import Pipeline
+
 from aml.config_template import config_dict
 
 
@@ -210,6 +211,63 @@ class AMLGridSearchCV:
                 clone_pipe = deepcopy(pipe)
                 clone_pipe.set_params(**c)
                 final_pipes.append(clone_pipe)
+        return final_pipes
+
+    def _make_aml_combinations_new(self, pipeline, param_grid):
+        """This is the primary function that takes pipeline and param_grid
+        provided by the user and creates combination of pipelines for later
+        training.
+        """
+        pipeline_steps_list = self._models_template_check(pipeline)
+        param_grid = self._check_def_config(pipeline_steps_list, param_grid)
+
+        # Packs classes in pipeline into single list based on block
+        fd = {}
+        st = dict(pipeline_steps_list)
+        ts = {v: k for k, v in st.items()}
+        for k, v in st.items():
+            k = ''.join([i for i in k if not i.isdigit()])
+            if k not in fd.keys():
+                fd[k] = [v]
+            else:
+                fd[k].append(v)
+
+        # Creates combination of every pipeline class
+        def _product_dict(**kwargs):
+            for instance in itertools.product(*kwargs.values()):
+                yield dict(zip(kwargs.keys(), instance))
+
+        pipelines_dict = list(_product_dict(**fd))
+
+        # Ads numbers to string blck
+        for p in pipelines_dict:
+            for k, v in list(p.items()):
+                p[ts[v]] = p.pop(k)
+
+        # For every pipeline in pipelines_dict create clone of that pipeline
+        # and apply grid params
+        final_pipes = []
+        final_params = []
+        for pipe_dict in pipelines_dict:
+            pipe = Pipeline([(k, v) for k, v in pipe_dict.items()])
+            clone_grid = deepcopy(param_grid)
+            delete_indexes = []
+            for g in clone_grid:
+                if g.split('__')[0] not in pipe_dict:
+                    delete_indexes.append(g)
+            for k in delete_indexes:
+                clone_grid.pop(k, None)
+            clone_grid_list = list(ParameterGrid(clone_grid))
+            for c in clone_grid_list:
+                final_params.append(c)
+                final_pipes.append(pipe)
+        s = time.time()
+        final_pipes = [deepcopy(i) for i in final_pipes]
+        print(s - time.time())
+        s = time.time()
+        final_pipes = [pi.set_params(**pa)
+                       for pi, pa in zip(final_pipes, final_params)]  # ! optimize this
+        print(s - time.time())
         return final_pipes
 
     def _worker(self, today, save_prediction_report, prediction_report_format,
