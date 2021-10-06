@@ -15,7 +15,8 @@
   - [AML with function transformer](#aml-with-function-transformer)
   - [AML with custom transformer](#aml-with-custom-transformer)
   - [AML with identity transformer](#aml-with-identity-transformer)
-  - [AML with neural networks](#aml-with-neural-networks)
+  - [AML with neural networks #1](#aml-with-neural-networks-1)
+  - [AML with neural networks #2](#aml-with-neural-networks-2)
 
 ## Examples:
 
@@ -413,7 +414,6 @@ aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
 ### AML multiprocessing
-# !!! ToDo
 ```
 import pandas as pd
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
@@ -555,7 +555,7 @@ param_grid = {}
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
 ```
-### AML with neural networks
+### AML with neural networks #1
 ```
 import pandas as pd
 from keras.layers import Dense
@@ -599,5 +599,57 @@ param_grid = {
 
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
+```
+### AML with neural networks #2
+```
+import pandas as pd
+from keras.layers import Dense
+from keras.models import Sequential
+from keras.wrappers.scikit_learn import KerasRegressor
+from sklearn.datasets import load_boston
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
+from aml import AMLGridSearchCV
+
+X, y = load_boston(return_X_y=True)
+X = pd.DataFrame(X)
+y = pd.Series(y)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+
+def nn_model(first_lr, optimizer):
+    model = Sequential()
+    model.add(Dense(first_lr, activation='relu'))
+    model.add(Dense(1, activation='relu'))
+    model.compile(loss='mean_absolute_error',
+                  optimizer=optimizer)
+    return model
+
+
+model = KerasRegressor(build_fn=nn_model, verbose=0)
+
+pipeline = Pipeline([
+    ('ss1', StandardScaler()),
+    ('model1', model)
+])
+
+param_grid = {
+    'model1__epochs': [10, 50, 100],
+    'model1__batch_size': [10, 20, 40, 60, 80, 100],
+    'model1__optimizer': [SGD(), Adadelta(), Adagrad(), Adam(), Adamax(),
+                          RMSprop()],
+    'model1__init_mode': ['uniform', 'lecun_uniform', 'normal', 'zero',
+                          'glorot_normal', 'glorot_uniform', 'he_normal',
+                          'he_uniform'],
+    'model1__activation': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
+                           'sigmoid', 'hard_sigmoid', 'linear'],
+    'model1__dropout_rate': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+    'model1__neurons1': [1, 5, 10, 15, 20, 25, 30]
+}
+
+aml = AMLGridSearchCV(pipeline, param_grid)
+results = aml.fit(X_train, y_train, X_test, y_test)
 ```
