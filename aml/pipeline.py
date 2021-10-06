@@ -261,13 +261,9 @@ class AMLGridSearchCV:
             for c in clone_grid_list:
                 final_params.append(c)
                 final_pipes.append(pipe)
-        s = time.time()
         final_pipes = [deepcopy(i) for i in final_pipes]
-        print(s - time.time())
-        s = time.time()
         final_pipes = [pi.set_params(**pa)
                        for pi, pa in zip(final_pipes, final_params)]  # ! optimize this
-        print(s - time.time())
         return final_pipes
 
     def _worker(self, today, save_prediction_report, prediction_report_format,
