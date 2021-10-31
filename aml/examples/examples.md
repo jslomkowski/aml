@@ -237,13 +237,12 @@ results = aml.fit(X_train, y_train, X_test, y_test)
 if you don't want to type too much you can use a predefined template from AML
 ```
 import pandas as pd
-from feature_engine.discretisation import (EqualFrequencyDiscretiser,
-                                           EqualWidthDiscretiser)
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
-from aml import AMLGridSearchCV
+from aml import AMLGridSearchCV, IdentityTransformer
 from aml.models_template import aml_basic_regressors
 
 X, y = fetch_california_housing(return_X_y=True)
@@ -253,8 +252,8 @@ y = pd.Series(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 pipeline = Pipeline([
-    ('disc1', EqualFrequencyDiscretiser()),
-    ('disc2', EqualWidthDiscretiser()),
+    ('ss1', StandardScaler()),
+    ('ss2', IdentityTransformer()),
     aml_basic_regressors
 ])
 
