@@ -14,12 +14,12 @@ do with AML)
 
     import pandas as pd
     from feature_engine.discretisation import EqualFrequencyDiscretiser
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
     from sklearn.pipeline import Pipeline
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -44,12 +44,12 @@ GridSearchCV for this.
 
     import pandas as pd
     from feature_engine.discretisation import EqualFrequencyDiscretiser
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import GridSearchCV, train_test_split
     from sklearn.pipeline import Pipeline
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -80,14 +80,14 @@ GridsearchCV to AMLGridsearchCV 
 
     import pandas as pd
     from feature_engine.discretisation import EqualFrequencyDiscretiser
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
     from sklearn.pipeline import Pipeline
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -128,7 +128,7 @@ Here AML will give you all of the combinations from inside of the pipeline
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -136,7 +136,7 @@ Here AML will give you all of the combinations from inside of the pipeline
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -177,7 +177,7 @@ transformers so the final pipes will look like so:
                                             EqualWidthDiscretiser)
     from feature_engine.transformation import PowerTransformer
     from feature_engine.outliers import Winsorizer
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -185,7 +185,7 @@ transformers so the final pipes will look like so:
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -221,7 +221,7 @@ Below is an example with 5 different models. Combinations that will be created:
 
     import pandas as pd
     from feature_engine.discretisation import EqualFrequencyDiscretiser
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -231,7 +231,7 @@ Below is an example with 5 different models. Combinations that will be created:
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -260,14 +260,14 @@ if you don't want to type too much you can use a predefined template from AML
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.model_selection import train_test_split
     from sklearn.pipeline import Pipeline
 
     from aml import AMLGridSearchCV
     from aml.models_template import aml_basic_regressors
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -293,7 +293,7 @@ AML with injected custom models
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -301,7 +301,7 @@ AML with injected custom models
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -336,7 +336,7 @@ Here is the example of simple grid search. Naming convention should be: 
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -344,7 +344,7 @@ Here is the example of simple grid search. Naming convention should be: 
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -386,7 +386,7 @@ see the documentation or config_template module for supported templates.
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -394,7 +394,7 @@ see the documentation or config_template module for supported templates.
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -425,7 +425,7 @@ supported class by providing '*' in param_grid.
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -433,7 +433,7 @@ supported class by providing '*' in param_grid.
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -460,7 +460,7 @@ ToDo
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -468,7 +468,7 @@ ToDo
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -500,7 +500,7 @@ ToDo
 .. code:: python
 
     import pandas as pd
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -509,7 +509,7 @@ ToDo
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -540,7 +540,7 @@ ToDo
 
     import pandas as pd
     from sklearn.base import BaseEstimator, TransformerMixin
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
@@ -548,7 +548,7 @@ ToDo
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -584,14 +584,14 @@ ToDo
     import pandas as pd
     from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                             EqualWidthDiscretiser)
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import train_test_split
     from sklearn.pipeline import Pipeline
 
     from aml import AMLGridSearchCV, IdentityTransformer
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 
@@ -619,14 +619,14 @@ ToDo
     from keras.layers import Dense
     from keras.models import Sequential
     from keras.wrappers.scikit_learn import KerasRegressor
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import fetch_california_housing
     from sklearn.model_selection import train_test_split
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
 
     from aml import AMLGridSearchCV
 
-    X, y = load_boston(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
     X = pd.DataFrame(X)
     y = pd.Series(y)
 

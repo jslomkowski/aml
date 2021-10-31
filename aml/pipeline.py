@@ -281,7 +281,6 @@ class AMLGridSearchCV:
         if verbose:
             print(
                 f'fitting pipeline {combinations.index(final_pipes)+1} of {len(combinations)}')
-        print(final_pipes)
         if transform_only is True:
             final_pipes.fit(X_train, y_train)
             run_time = int(time.time() - now)
@@ -314,7 +313,6 @@ class AMLGridSearchCV:
                 error_train = self.scoring(y_train, y_pred_train)
                 if X_test is not None:
                     try:
-                        print(X_test.head(10))
                         y_pred_test = pd.Series(
                             final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
                         exception_message = ''
