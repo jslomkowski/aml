@@ -603,13 +603,15 @@ results = aml.fit(X_train, y_train, X_test, y_test)
 ### AML with neural networks #2
 ```
 import pandas as pd
-from keras.layers import Dense
-from keras.models import Sequential
-from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import (SGD, Adadelta, Adagrad, Adam, Adamax,
+                                         RMSprop)
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 
 from aml import AMLGridSearchCV
 
@@ -620,9 +622,10 @@ y = pd.Series(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 
-def nn_model(first_lr, optimizer):
+def nn_model(optimizer, ler1_act, ler2_act, ler1_neur, ler2_neur):
     model = Sequential()
-    model.add(Dense(first_lr, activation='relu'))
+    model.add(Dense(ler1_neur, activation=ler1_act))
+    model.add(Dense(ler2_neur, activation=ler2_act))
     model.add(Dense(1, activation='relu'))
     model.compile(loss='mean_absolute_error',
                   optimizer=optimizer)
@@ -638,16 +641,15 @@ pipeline = Pipeline([
 
 param_grid = {
     'model1__epochs': [10, 50, 100],
-    'model1__batch_size': [10, 20, 40, 60, 80, 100],
-    'model1__optimizer': [SGD(), Adadelta(), Adagrad(), Adam(), Adamax(),
+    'model1__batch_size': [10, 20, 40, 60, 80, X_train.shape[0]],
+    'model1__optimizer': [SGD(), Adadelta(), Adagrad(), Adam(0.1), Adamax(),
                           RMSprop()],
-    'model1__init_mode': ['uniform', 'lecun_uniform', 'normal', 'zero',
-                          'glorot_normal', 'glorot_uniform', 'he_normal',
-                          'he_uniform'],
-    'model1__activation': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
-                           'sigmoid', 'hard_sigmoid', 'linear'],
-    'model1__dropout_rate': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-    'model1__neurons1': [1, 5, 10, 15, 20, 25, 30]
+    'model1__ler1_act': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
+                         'sigmoid', 'hard_sigmoid', 'linear'],
+    'model1__ler2_act': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
+                         'sigmoid', 'hard_sigmoid', 'linear'],
+    'model1__ler1_neur': [8, int(X_train.shape[1] * 1.5), int(X_train.shape[1] * 2)],
+    'model1__ler2_neur': [20]
 }
 
 aml = AMLGridSearchCV(pipeline, param_grid)
