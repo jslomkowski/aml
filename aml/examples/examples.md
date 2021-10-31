@@ -607,6 +607,7 @@ from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import (SGD, Adadelta, Adagrad, Adam, Adamax,
@@ -632,7 +633,11 @@ def nn_model(optimizer, ler1_act, ler2_act, ler1_neur, ler2_neur):
     return model
 
 
-model = KerasRegressor(build_fn=nn_model, verbose=0)
+es = EarlyStopping(monitor='val_loss', mode='min',
+                   verbose=1, patience=10)
+mc = ModelCheckpoint('best_model.h5', monitor='val_loss',
+                     mode='min', verbose=1)
+model = KerasRegressor(build_fn=nn_model, verbose=0, callbacks=[es, mc])
 
 pipeline = Pipeline([
     ('ss1', StandardScaler()),
@@ -643,13 +648,13 @@ param_grid = {
     'model1__epochs': [10, 50, 100],
     'model1__batch_size': [10, 20, 40, 60, 80, X_train.shape[0]],
     'model1__optimizer': [SGD(), Adadelta(), Adagrad(), Adam(0.1), Adamax(),
-                          RMSprop()],
+                 s         RMSprop()],
     'model1__ler1_act': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
                          'sigmoid', 'hard_sigmoid', 'linear'],
     'model1__ler2_act': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
                          'sigmoid', 'hard_sigmoid', 'linear'],
     'model1__ler1_neur': [8, int(X_train.shape[1] * 1.5), int(X_train.shape[1] * 2)],
-    'model1__ler2_neur': [20]
+    'model1__ler2_neur': [8, int(X_train.shape[1] * 1.5), int(X_train.shape[1] * 2)],
 }
 
 aml = AMLGridSearchCV(pipeline, param_grid)
