@@ -76,10 +76,7 @@ class AMLGridSearchCV:
     def __init__(self, pipeline, param_grid=None, scoring=mean_absolute_error):
 
         self.pipeline = pipeline
-        if param_grid is None:
-            self.param_grid = dict()
-        else:
-            self.param_grid = param_grid
+        self.param_grid = dict() if param_grid is None else param_grid
         self.scoring = scoring
 
     def _models_template_check(self, pipeline):
@@ -137,10 +134,11 @@ class AMLGridSearchCV:
                     is_star_list.append(p[0])
 
         # Finds class name for that classes that have star attached to it.
-        search_list = {}
-        for p in pipeline_steps_list:
-            if p[0] in is_star_list:
-                search_list[p[0]] = str(p[1].__class__)[8:][:-2]
+        search_list = {
+            p[0]: str(p[1].__class__)[8:][:-2]
+            for p in pipeline_steps_list
+            if p[0] in is_star_list
+        }
 
         # For that class you found, search for its parameters in
         # config_template.py and attach those to a new dict
@@ -156,7 +154,7 @@ class AMLGridSearchCV:
         # Find and delete config with * and update param_grid_mod to param_grid
         if param_grid != {'*'}:
             for kp in list(param_grid.keys()):
-                if kp[:-3] in search_list.keys():
+                if kp[:-3] in search_list:
                     del param_grid[kp]
             param_grid.update(param_grid_mod)
         else:
@@ -316,6 +314,7 @@ class AMLGridSearchCV:
                 error_train = self.scoring(y_train, y_pred_train)
                 if X_test is not None:
                     try:
+                        print(X_test.head(10))
                         y_pred_test = pd.Series(
                             final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
                         exception_message = ''
@@ -329,23 +328,27 @@ class AMLGridSearchCV:
                     error_test = np.nan
                     exception_message = ''
                 for k, v in final_pipes.get_params().items():
-                    if k.find('__') > 0:
-                        if k in self.param_grid:
-                            performance_params.update({k: v})
+                    if k.find('__') > 0 and k in self.param_grid:
+                        performance_params.update({k: v})
             except ValueError as e:
                 exception_message = str(e)
                 run_time = ''
                 error_train = np.nan
                 error_test = np.nan
-        res = {'params_dict': final_pipes.named_steps,
-               'name': pipe_name,
-               'steps': ' '.join([str(v.__class__).split('.')[-1][:-2] for v in final_pipes.named_steps.values()]),
-               'train_time (sec)': run_time,
-               'error_train': round(error_train, 2),
-               'error_test': round(error_test, 2),
-               'train_test_dif': round(error_train / error_test, 2),
-               'error': exception_message
-               }
+        res = {
+            'params_dict': final_pipes.named_steps,
+            'name': pipe_name,
+            'steps': ' '.join(
+                str(v.__class__).split('.')[-1][:-2]
+                for v in final_pipes.named_steps.values()
+            ),
+            'train_time (sec)': run_time,
+            'error_train': round(error_train, 2),
+            'error_test': round(error_test, 2),
+            'train_test_dif': round(error_train / error_test, 2),
+            'error': exception_message,
+        }
+
         if save_prediction_report:
             self._generate_prediction_report(
                 today, pipe_name, X_train, y_train, y_pred_train, X_test,
@@ -399,8 +402,8 @@ class AMLGridSearchCV:
         else:
             print(f'{performance_report_format} - report format unrecognised.')
 
-    def fit(self, X_train, y_train, transform_only, X_test=None, y_test=None, n_jobs=None,
-            prefer='processes', save_performance_report=True,
+    def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
+            transform_only=False, prefer='processes', save_performance_report=True,
             performance_report_format='xlsx', save_prediction_report=False,
             prediction_report_format='csv', verbose=True):
         """Fit method will go through the whole process of creating AML combinations.
@@ -458,7 +461,7 @@ class AMLGridSearchCV:
                                   verbose, X_train, y_train, transform_only,
                                   X_test, y_test) for i in combinations)
         elapsed = (int(time.time() - start))
-        print(f'total run time: {str(timedelta(seconds=elapsed))}')
+        print(f'total run time: {timedelta(seconds=elapsed)}')
         performance_results = pd.DataFrame.from_dict(
             [i[0][0] for i in joined_results])
         performance_params = pd.DataFrame.from_dict(
