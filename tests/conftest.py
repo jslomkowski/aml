@@ -26,7 +26,7 @@ def scenario_with_default_models_template():
     pipeline = Pipeline([
         ('disc1', EqualFrequencyDiscretiser()),
         ('disc2', EqualWidthDiscretiser()),
-        aml_basic_regressors
+        aml_basic_regressors[:2]
     ])
     param_grid = {}
     aml = AMLGridSearchCV(pipeline, param_grid)

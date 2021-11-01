@@ -2,7 +2,7 @@ import numpy as np
 from feature_engine.discretisation import (EqualFrequencyDiscretiser,
                                            EqualWidthDiscretiser)
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.pipeline import Pipeline
 
 
@@ -29,7 +29,7 @@ def test_dict_does_not_exists(scenario_without_params):
     aml, pipeline, param_grid = scenario_without_params
     del param_grid
     check = 'param_grid' in locals()
-    assert check is False
+    assert not check
 
 
 def test_default_models_template(scenario_with_default_models_template):
@@ -38,11 +38,11 @@ def test_default_models_template(scenario_with_default_models_template):
     check = [Pipeline(steps=[('disc1', EqualFrequencyDiscretiser()),
                              ('model1', LinearRegression())]),
              Pipeline(steps=[('disc1', EqualFrequencyDiscretiser()),
-                             ('model2', RandomForestRegressor())]),
+                             ('model2', Lasso())]),
              Pipeline(steps=[('disc2', EqualWidthDiscretiser()),
                              ('model1', LinearRegression())]),
              Pipeline(steps=[('disc2', EqualWidthDiscretiser()),
-                             ('model2', RandomForestRegressor())])]
+                             ('model2', Lasso())])]
     assert str(final_pipes) == str(check)
 
 

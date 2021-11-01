@@ -159,6 +159,16 @@ class AMLGridSearchCV:
         provided by the user and creates combination of pipelines for later
         training.
         """
+
+        leave = []
+        remove = []
+        for i in pipeline.steps:
+            if isinstance(i, list):
+                leave = leave + i
+                remove.append(i)
+        pipeline.steps = [elt for elt in pipeline.steps if elt not in remove]
+        pipeline.steps = pipeline.steps + leave
+
         if transform_only is True:
             remove = [p for p in pipeline.steps if hasattr(p[1], 'predict')]
             pipeline.steps = [e for e in pipeline.steps if e not in remove]
@@ -260,6 +270,65 @@ class AMLGridSearchCV:
                        for pi, pa in zip(final_pipes, final_params)]  # ! optimize this
         return final_pipes
 
+    def _transform_only_true(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
+        try:
+            now = time.time()
+            final_pipes.fit(X_train, y_train)
+            run_time = int(time.time() - now)
+            X_train_index = X_train.index
+            X_train_columns = X_train.columns
+            X_train = pd.DataFrame(final_pipes.transform(
+                X_train), columns=X_train_columns, index=X_train_index)
+            y_pred_train = pd.Series(
+                np.nan, name='y_pred_train', index=X_train.index)
+            if X_test is not None:
+                X_test_index = X_test.index
+                X_test_columns = X_test.columns
+                X_test = pd.DataFrame(final_pipes.transform(
+                    X_test), columns=X_test_columns, index=X_test_index)
+                y_pred_test = pd.Series(
+                    np.nan, name='y_pred_test', index=X_test.index)
+            exception_message = ''
+        except ValueError as e:
+            exception_message = str(e)
+            run_time = ''
+        error_train = np.nan
+        error_test = np.nan
+        return run_time, y_pred_train, y_pred_test, exception_message, error_train, error_test
+
+    def _transform_only_false(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
+        try:
+            performance_params = {}
+            now = time.time()
+            final_pipes.fit(X_train, y_train)
+            run_time = int(time.time() - now)
+            y_pred_train = pd.Series(
+                final_pipes.predict(X_train), name='y_pred_train', index=X_train.index)
+            error_train = self.scoring(y_train, y_pred_train)
+            if X_test is not None:
+                try:
+                    y_pred_test = pd.Series(
+                        final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
+                    exception_message = ''
+                    error_test = self.scoring(y_test, y_pred_test)
+                except ValueError as e:
+                    y_pred_test = pd.Series(
+                        np.nan, name='y_pred_test', index=X_test.index)
+                    exception_message = str(e)
+                    error_test = np.nan
+            else:
+                error_test = np.nan
+                exception_message = ''
+            for k, v in final_pipes.get_params().items():
+                if k.find('__') > 0 and k in self.param_grid:
+                    performance_params.update({k: v})
+        except ValueError as e:
+            exception_message = str(e)
+            run_time = ''
+            error_train = np.nan
+            error_test = np.nan
+        return performance_params, run_time, y_pred_train, y_pred_test, exception_message, error_train, error_test
+
     def _worker(self, today, save_prediction_report, prediction_report_format,
                 final_pipes, combinations, verbose, X_train, y_train,
                 transform_only, X_test=None, y_test=None):
@@ -267,65 +336,21 @@ class AMLGridSearchCV:
         report for one pipeline. _worker is run multiple times in fit()
         """
         performance_results = []
-        performance_params = {}
-        now = time.time()
         letters = string.ascii_lowercase
         pipe_name = ''.join(random.choice(letters) for i in range(10))
         if verbose:
             print(
                 f'fitting pipeline {combinations.index(final_pipes)+1} of {len(combinations)}')
+
         if transform_only is True:
-            final_pipes.fit(X_train, y_train)
-            run_time = int(time.time() - now)
-            try:
-                X_train_index = X_train.index
-                X_train_columns = X_train.columns
-                X_train = pd.DataFrame(final_pipes.transform(
-                    X_train), columns=X_train_columns, index=X_train_index)
-                y_pred_train = pd.Series(
-                    np.nan, name='y_pred_train', index=X_train.index)
-                if X_test is not None:
-                    X_test_index = X_test.index
-                    X_test_columns = X_test.columns
-                    X_test = pd.DataFrame(final_pipes.transform(
-                        X_test), columns=X_test_columns, index=X_test_index)
-                    y_pred_test = pd.Series(
-                        np.nan, name='y_pred_test', index=X_test.index)
-                exception_message = ''
-            except ValueError as e:
-                exception_message = str(e)
-                run_time = ''
-            error_train = np.nan
-            error_test = np.nan
+            run_time, y_pred_train, y_pred_test, \
+                exception_message, error_train, error_test = self._transform_only_true(
+                    final_pipes, X_train, y_train, X_test, y_test)
         else:
-            try:
-                final_pipes.fit(X_train, y_train)
-                run_time = int(time.time() - now)
-                y_pred_train = pd.Series(
-                    final_pipes.predict(X_train), name='y_pred_train', index=X_train.index)
-                error_train = self.scoring(y_train, y_pred_train)
-                if X_test is not None:
-                    try:
-                        y_pred_test = pd.Series(
-                            final_pipes.predict(X_test), name='y_pred_test', index=X_test.index)
-                        exception_message = ''
-                        error_test = self.scoring(y_test, y_pred_test)
-                    except ValueError as e:
-                        y_pred_test = pd.Series(
-                            np.nan, name='y_pred_test', index=X_test.index)
-                        exception_message = str(e)
-                        error_test = np.nan
-                else:
-                    error_test = np.nan
-                    exception_message = ''
-                for k, v in final_pipes.get_params().items():
-                    if k.find('__') > 0 and k in self.param_grid:
-                        performance_params.update({k: v})
-            except ValueError as e:
-                exception_message = str(e)
-                run_time = ''
-                error_train = np.nan
-                error_test = np.nan
+            performance_params, run_time, y_pred_train, y_pred_test, \
+                exception_message, error_train, error_test = self._transform_only_false(
+                    final_pipes, X_train, y_train, X_test, y_test)
+
         res = {
             'params_dict': final_pipes.named_steps,
             'name': pipe_name,
