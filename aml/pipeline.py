@@ -20,17 +20,10 @@ from aml.config_template import config_dict
 def _validate_steps(self):
     """This is a simple monkey patch to allow multiple models in pipeline.
     """
-    names, estimators = zip(*self.steps)
-    self._validate_names(names)
-    transformers = estimators[:-1]
-    for t in transformers:
-        if t is None or t == 'passthrough':
-            continue
+    pass
 
 
 Pipeline._validate_steps = _validate_steps
-
-# self = AMLGridSearchCV(pipeline, param_grid)
 
 
 class AMLGridSearchCV:
