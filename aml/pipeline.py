@@ -267,11 +267,13 @@ class AMLGridSearchCV:
                 final_pipes.append(pipe)
         final_pipes = [deepcopy(i) for i in final_pipes]
         final_pipes = [pi.set_params(**pa)
-                       for pi, pa in zip(final_pipes, final_params)]  # ! optimize this
+                       for pi, pa in zip(final_pipes, final_params)]
         return final_pipes
 
     def _transform_only_true(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
+        # ! optimize this
         try:
+            performance_params = {}
             now = time.time()
             final_pipes.fit(X_train, y_train)
             run_time = int(time.time() - now)
@@ -289,14 +291,20 @@ class AMLGridSearchCV:
                 y_pred_test = pd.Series(
                     np.nan, name='y_pred_test', index=X_test.index)
             exception_message = ''
+            for k, v in final_pipes.get_params().items():
+                if k.find('__') > 0 and k in self.param_grid:
+                    performance_params.update({k: v})
         except ValueError as e:
             exception_message = str(e)
-            run_time = ''
+            run_time = np.nan
         error_train = np.nan
         error_test = np.nan
-        return run_time, y_pred_train, y_pred_test, exception_message, error_train, error_test
+        y_pred_train = np.nan
+        y_pred_test = np.nan
+        return performance_params, run_time, y_pred_train, y_pred_test, exception_message, error_train, error_test
 
     def _transform_only_false(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
+        # ! optimize this
         try:
             performance_params = {}
             now = time.time()
@@ -324,9 +332,11 @@ class AMLGridSearchCV:
                     performance_params.update({k: v})
         except ValueError as e:
             exception_message = str(e)
-            run_time = ''
+            run_time = np.nan
             error_train = np.nan
             error_test = np.nan
+            y_pred_train = np.nan
+            y_pred_test = np.nan
         return performance_params, run_time, y_pred_train, y_pred_test, exception_message, error_train, error_test
 
     def _worker(self, today, save_prediction_report, prediction_report_format,
@@ -343,7 +353,7 @@ class AMLGridSearchCV:
                 f'fitting pipeline {combinations.index(final_pipes)+1} of {len(combinations)}')
 
         if transform_only is True:
-            run_time, y_pred_train, y_pred_test, \
+            performance_params, run_time, y_pred_train, y_pred_test, \
                 exception_message, error_train, error_test = self._transform_only_true(
                     final_pipes, X_train, y_train, X_test, y_test)
         else:

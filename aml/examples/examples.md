@@ -9,6 +9,7 @@
   - [AML with injected default models](#aml-with-injected-default-models)
   - [AML with injected custom models](#aml-with-injected-custom-models)
   - [AML with grid search basic](#aml-with-grid-search-basic)
+  - [AML with grid search advanced](#aml-with-grid-search-basic)
   - [AML with grid search for one model](#aml-with-grid-search-for-one-model)
   - [AML with grid search for whole pipeline](#aml-with-grid-search-for-whole-pipeline)
   - [AML multiprocessing](#aml-multiprocessing)
@@ -336,6 +337,52 @@ param_grid = {
 
 aml = AMLGridSearchCV(pipeline, param_grid)
 results = aml.fit(X_train, y_train, X_test, y_test)
+```
+### AML with grid search advanced
+```
+import numpy as np
+import pandas as pd
+from feature_engine.encoding import OrdinalEncoder, RareLabelEncoder
+from feature_engine.imputation import CategoricalImputer, MeanMedianImputer
+from feature_engine.wrappers import SklearnTransformerWrapper
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from xgboost import XGBRegressor
+
+from aml import AMLGridSearchCV, IdentityTransformer
+
+X, y = fetch_california_housing(return_X_y=True)
+X = pd.DataFrame(X)
+y = pd.Series(y)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+pipeline = Pipeline([
+    ('numimp1', MeanMedianImputer()),
+    ('catimp1', CategoricalImputer()),
+    ('rareen1', RareLabelEncoder()),
+    ('ordenc1', OrdinalEncoder()),
+    ('numsca1', SklearnTransformerWrapper(StandardScaler())),
+    ('numsca2', IdentityTransformer()),
+    ('xgbreg', XGBRegressor())
+])
+
+param_grid = {
+    'rareen1__n_categories': [7],
+    'xgbreg__n_estimators': [100],
+    'xgbreg__max_depth': range(1, 11),
+    'xgbreg__learning_rate': [1e-3, 1e-2, 1e-1, 0.5, 1.],
+    'xgbreg__subsample': np.arange(0.05, 1.01, 0.05),
+    'xgbreg__min_child_weight': range(1, 21),
+    'xgbreg__n_jobs': [-1],
+    'xgbreg__verbosity': [0],
+    'xgbreg__objective': ['reg:squarederror']
+}
+
+aml = AMLGridSearchCV(pipeline, param_grid)
+results = aml.fit(X_train, y_train, X_test, y_test, transform_only=True)
 ```
 ### AML with grid search for one model
 Like in the previous example you can use custom hyperparameters but if you want AML to do the work just provide * (star) instead of hyperparameter name. In the example below * means:
