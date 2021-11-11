@@ -154,7 +154,7 @@ class AMLGridSearchCV:
             param_grid = param_grid_mod
         return param_grid
 
-    def _make_aml_combinations(self, pipeline, param_grid, transform_only=False):
+    def _make_aml_combinations(self, pipeline, param_grid):
         """This is the primary function that takes pipeline and param_grid
         provided by the user and creates combination of pipelines for later
         training.
@@ -169,9 +169,6 @@ class AMLGridSearchCV:
         pipeline.steps = [elt for elt in pipeline.steps if elt not in remove]
         pipeline.steps = pipeline.steps + leave
 
-        if transform_only is True:
-            remove = [p for p in pipeline.steps if hasattr(p[1], 'predict')]
-            pipeline.steps = [e for e in pipeline.steps if e not in remove]
         pipeline_steps_list = self._models_template_check(pipeline)
         param_grid = self._check_def_config(pipeline_steps_list, param_grid)
 
@@ -270,43 +267,9 @@ class AMLGridSearchCV:
                        for pi, pa in zip(final_pipes, final_params)]
         return final_pipes
 
-    def _transform_only_true(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
-        # ! optimize this
-        try:
-            performance_params = {}
-            now = time.time()
-            final_pipes.fit(X_train, y_train)
-            run_time = int(time.time() - now)
-            X_train_index = X_train.index
-            X_train_columns = X_train.columns
-            X_train = pd.DataFrame(final_pipes.transform(
-                X_train), columns=X_train_columns, index=X_train_index)
-            y_pred_train = pd.Series(
-                np.nan, name='y_pred_train', index=X_train.index)
-            if X_test is not None:
-                X_test_index = X_test.index
-                X_test_columns = X_test.columns
-                X_test = pd.DataFrame(final_pipes.transform(
-                    X_test), columns=X_test_columns, index=X_test_index)
-                y_pred_test = pd.Series(
-                    np.nan, name='y_pred_test', index=X_test.index)
-            exception_message = ''
-            for k, v in final_pipes.get_params().items():
-                if k.find('__') > 0 and k in self.param_grid:
-                    performance_params.update({k: v})
-        except ValueError as e:
-            exception_message = str(e)
-            run_time = np.nan
-        error_train = np.nan
-        error_test = np.nan
-        y_pred_train = np.nan
-        y_pred_test = np.nan
-        return performance_params, run_time, y_pred_train, y_pred_test, exception_message, error_train, error_test
-
     def _transform_only_false(self, final_pipes, X_train, y_train, X_test=None, y_test=None):
         # ! optimize this
         try:
-            performance_params = {}
             now = time.time()
             final_pipes.fit(X_train, y_train)
             run_time = int(time.time() - now)
@@ -327,9 +290,12 @@ class AMLGridSearchCV:
             else:
                 error_test = np.nan
                 exception_message = ''
-            for k, v in final_pipes.get_params().items():
-                if k.find('__') > 0 and k in self.param_grid:
-                    performance_params.update({k: v})
+            performance_params = {
+                k: v
+                for k, v in final_pipes.get_params().items()
+                if k.find('__') > 0 and k in self.param_grid
+            }
+
         except ValueError as e:
             exception_message = str(e)
             run_time = np.nan
@@ -341,7 +307,7 @@ class AMLGridSearchCV:
 
     def _worker(self, today, save_prediction_report, prediction_report_format,
                 final_pipes, combinations, verbose, X_train, y_train,
-                transform_only, X_test=None, y_test=None):
+                X_test=None, y_test=None):
         """This is for multiprocessing. Worker will fit, score and create
         report for one pipeline. _worker is run multiple times in fit()
         """
@@ -352,14 +318,9 @@ class AMLGridSearchCV:
             print(
                 f'fitting pipeline {combinations.index(final_pipes)+1} of {len(combinations)}')
 
-        if transform_only is True:
-            performance_params, run_time, y_pred_train, y_pred_test, \
-                exception_message, error_train, error_test = self._transform_only_true(
-                    final_pipes, X_train, y_train, X_test, y_test)
-        else:
-            performance_params, run_time, y_pred_train, y_pred_test, \
-                exception_message, error_train, error_test = self._transform_only_false(
-                    final_pipes, X_train, y_train, X_test, y_test)
+        performance_params, run_time, y_pred_train, y_pred_test, \
+            exception_message, error_train, error_test = self._transform_only_false(
+                final_pipes, X_train, y_train, X_test, y_test)
 
         res = {
             'params_dict': final_pipes.named_steps,
@@ -429,7 +390,7 @@ class AMLGridSearchCV:
             print(f'{performance_report_format} - report format unrecognised.')
 
     def fit(self, X_train, y_train, X_test=None, y_test=None, n_jobs=None,
-            transform_only=False, prefer='processes', save_performance_report=True,
+            prefer='processes', save_performance_report=True,
             performance_report_format='xlsx', save_prediction_report=False,
             prediction_report_format='csv', verbose=True):
         """Fit method will go through the whole process of creating AML combinations.
@@ -480,12 +441,11 @@ class AMLGridSearchCV:
         start = time.time()
         today = self._today()
         combinations = self._make_aml_combinations(
-            self.pipeline, self.param_grid, transform_only)
+            self.pipeline, self.param_grid)
         joined_results = Parallel(n_jobs=n_jobs, prefer=prefer)(
             delayed(self._worker)(today, save_prediction_report,
                                   prediction_report_format, i, combinations,
-                                  verbose, X_train, y_train, transform_only,
-                                  X_test, y_test) for i in combinations)
+                                  verbose, X_train, y_train, X_test, y_test) for i in combinations)
         elapsed = (int(time.time() - start))
         print(f'total run time: {timedelta(seconds=elapsed)}')
         performance_results = pd.DataFrame.from_dict(
