@@ -9,7 +9,7 @@
   - [AML with injected default models](#aml-with-injected-default-models)
   - [AML with injected custom models](#aml-with-injected-custom-models)
   - [AML with grid search basic](#aml-with-grid-search-basic)
-  - [AML with grid search advanced](#aml-with-grid-search-basic)
+  - [AML with grid search advanced](#aml-with-grid-search-advanced)
   - [AML with grid search for one model](#aml-with-grid-search-for-one-model)
   - [AML with grid search for whole pipeline](#aml-with-grid-search-for-whole-pipeline)
   - [AML multiprocessing](#aml-multiprocessing)
@@ -693,8 +693,7 @@ pipeline = Pipeline([
 param_grid = {
     'model1__epochs': [10, 50, 100],
     'model1__batch_size': [10, 20, 40, 60, 80, X_train.shape[0]],
-    'model1__optimizer': [SGD(), Adadelta(), Adagrad(), Adam(0.1), Adamax(),
-                 s         RMSprop()],
+    'model1__optimizer': [SGD(), Adadelta(), Adagrad(), Adam(0.1), Adamax(), RMSprop()],
     'model1__ler1_act': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
                          'sigmoid', 'hard_sigmoid', 'linear'],
     'model1__ler2_act': ['softmax', 'softplus', 'softsign', 'relu', 'tanh',
