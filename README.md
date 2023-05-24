@@ -1,8 +1,9 @@
 # AML
 
-## This is WIP
+Experimental package for machine learning automated pipelines that iterates through transformers and estimators to return performance report with errors
 
-experimental package for machine learning automated pipelines that iterates through transformers and estimators to return performance report with errors
+## Usage and examples:
+see github wiki page or documentation in /aml/docs/build/html/index.html
 
 ## Install
 
@@ -16,8 +17,6 @@ pip install -e .
 tox -e test_pipeline
 ```
 
-## Examples:
-see github wiki page or documentation in /aml/docs/build/html/index.html
 
 ## ToDo:
 - [x] Error handling (if pipe member breaks then continue)
